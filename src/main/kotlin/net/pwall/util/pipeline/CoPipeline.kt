@@ -39,6 +39,11 @@ interface CoAcceptor<in A, out R> : CoBaseAcceptor<R> {
 
 interface CoIntAcceptor<out R> : CoBaseAcceptor<R> {
     suspend fun accept(value: Int)
+    suspend fun accept(string: String) {
+        for (character in string)
+            accept(character.toInt())
+        close()
+    }
 }
 
 abstract class CoBaseAbstractAcceptor<out R> : CoBaseAcceptor<R> {
