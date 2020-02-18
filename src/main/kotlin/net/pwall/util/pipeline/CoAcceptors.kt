@@ -25,6 +25,8 @@
 
 package net.pwall.util.pipeline
 
+import kotlinx.coroutines.channels.SendChannel
+
 /**
  * The base interface for pipeline and acceptor classes.
  *
@@ -218,3 +220,27 @@ class SimpleCoAcceptor<A>(val block: suspend (A) -> Unit) : AbstractCoAcceptor<A
  * @param   A       the accepted (input) type
  */
 fun <A> simpleCoAcceptor(block: suspend (A) -> Unit) = SimpleCoAcceptor(block)
+
+/**
+ * An implementation of [CoAcceptor] that sends the value to a [SendChannel].
+ */
+class ChannelCoAcceptor<A>(private val channel: SendChannel<A>) : AbstractCoAcceptor<A, Unit>() {
+
+    /**
+     * Accept a value, after `closed` check and test for end of data.  Send the value to the [SendChannel].
+     *
+     * @param   value       the input value
+     */
+    override suspend fun acceptObject(value: A) {
+        channel.send(value)
+    }
+
+    /**
+     * Close the acceptor.
+     */
+    override fun close() {
+        super.close()
+        channel.close()
+    }
+
+}

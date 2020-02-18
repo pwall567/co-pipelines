@@ -2,6 +2,10 @@
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
+## [0.3] - 2020-02-18
+### Added
+- `ChannelCoAcceptor`: sends data to a Kotlin `Channel`
+
 ## [0.2] - 2020-02-14
 ### Changed
 - Split main file into three, added KDoc
