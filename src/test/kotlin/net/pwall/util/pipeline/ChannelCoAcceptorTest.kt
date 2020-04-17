@@ -36,26 +36,24 @@ import kotlin.test.assertTrue
 
 class ChannelCoAcceptorTest {
 
-    @Test fun `should accept sequence of objects and send to Channel`() {
-        runBlocking {
-            val channel = Channel<String>()
-            val job = launch {
-                val iterator = channel.iterator()
-                assertTrue(iterator.hasNext())
-                assertEquals("abc", iterator.next())
-                assertTrue(iterator.hasNext())
-                assertEquals("def", iterator.next())
-                assertTrue(iterator.hasNext())
-                assertEquals("ghi", iterator.next())
-                assertFalse(iterator.hasNext())
-            }
-            val channelCoAcceptor = ChannelCoAcceptor(channel)
-            channelCoAcceptor.accept("abc")
-            channelCoAcceptor.accept("def")
-            channelCoAcceptor.accept("ghi")
-            channelCoAcceptor.close()
-            job.join()
+    @Test fun `should accept sequence of objects and send to Channel`() = runBlocking {
+        val channel = Channel<String>()
+        val job = launch {
+            val iterator = channel.iterator()
+            assertTrue(iterator.hasNext())
+            assertEquals("abc", iterator.next())
+            assertTrue(iterator.hasNext())
+            assertEquals("def", iterator.next())
+            assertTrue(iterator.hasNext())
+            assertEquals("ghi", iterator.next())
+            assertFalse(iterator.hasNext())
         }
+        val channelCoAcceptor = ChannelCoAcceptor(channel)
+        channelCoAcceptor.accept("abc")
+        channelCoAcceptor.accept("def")
+        channelCoAcceptor.accept("ghi")
+        channelCoAcceptor.close()
+        job.join()
     }
 
 }

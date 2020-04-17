@@ -34,28 +34,24 @@ import kotlin.test.expect
 
 class UTF16CodePointTest {
 
-    @Test fun `should pass through BMP code point`() {
-        runBlocking {
-            val pipe = CoUTF16_CodePoint(TestIntCoAcceptor())
-            pipe.accept('A'.toInt())
-            assertTrue(pipe.complete)
-            val result = pipe.result
-            expect(1) { result.size }
-            expect('A'.toInt()) { result[0] }
-        }
+    @Test fun `should pass through BMP code point`() = runBlocking {
+        val pipe = CoUTF16_CodePoint(TestIntCoAcceptor())
+        pipe.accept('A'.toInt())
+        assertTrue(pipe.complete)
+        val result = pipe.result
+        expect(1) { result.size }
+        expect('A'.toInt()) { result[0] }
     }
 
-    @Test fun `should convert surrogate pair`() {
-        runBlocking {
-            val pipe = CoUTF16_CodePoint(TestIntCoAcceptor())
-            pipe.accept(0xD83D)
-            assertFalse(pipe.complete)
-            pipe.accept(0xDE02)
-            assertTrue(pipe.complete)
-            val result = pipe.result
-            expect(1) { result.size }
-            expect(0x1F602) { result[0] }
-        }
+    @Test fun `should convert surrogate pair`() = runBlocking {
+        val pipe = CoUTF16_CodePoint(TestIntCoAcceptor())
+        pipe.accept(0xD83D)
+        assertFalse(pipe.complete)
+        pipe.accept(0xDE02)
+        assertTrue(pipe.complete)
+        val result = pipe.result
+        expect(1) { result.size }
+        expect(0x1F602) { result[0] }
     }
 
 }

@@ -26,7 +26,6 @@
 package net.pwall.util.pipeline
 
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import kotlin.test.Test
@@ -34,20 +33,16 @@ import kotlin.test.expect
 
 class TestReadingInputStream {
 
-    @Test fun `should read and convert external resource`() {
-        runBlocking {
-            launch {
-                val pipe = withContext(Dispatchers.IO) {
-                    this::class.java.getResourceAsStream("/test1.txt").use {
-                        CoUTF8_CodePoint(CoCodePoint_UTF16(StringCoAcceptor(120))).apply {
-                            while (!closed)
-                                accept(it.read())
-                        }
-                    }
+    @Test fun `should read and convert external resource`() = runBlocking {
+        val pipe = withContext(Dispatchers.IO) {
+            this::class.java.getResourceAsStream("/test1.txt").use {
+                CoUTF8_CodePoint(CoCodePoint_UTF16(StringCoAcceptor(120))).apply {
+                    while (!closed)
+                        accept(it.read())
                 }
-                expect(expected) { pipe.result }
             }
         }
+        expect(expected) { pipe.result }
     }
 
     companion object {

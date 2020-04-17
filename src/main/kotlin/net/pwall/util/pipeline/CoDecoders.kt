@@ -220,16 +220,25 @@ class CoASCII_CodePoint<R>(downstream: IntCoAcceptor<R>) : AbstractIntCoPipeline
 
 object CoDecoderFactory {
 
-    fun <R> getDecoder(charsetName: String, downstream: IntCoAcceptor<R>): AbstractIntCoPipeline<R> {
-        return when (charsetName) {
+    fun <R> getDecoder(charsetName: String, downstream: IntCoAcceptor<R>): IntCoPipeline<R> = when (charsetName) {
             "windows-1252" -> CoWindows1252_CodePoint(downstream)
             "ISO-8859-1" -> CoISO8859_1_CodePoint(downstream)
             "ISO-8859-15" -> CoISO8859_15_CodePoint(downstream)
             "US-ASCII" -> CoASCII_CodePoint(downstream)
             else -> CoUTF8_CodePoint(downstream)
         }
-    }
 
     fun <R> getDecoder(charset: Charset, downstream: IntCoAcceptor<R>) = getDecoder(charset.name(), downstream)
+
+}
+
+object CoEncoderFactory {
+
+    fun <R> getEncoder(charsetName: String, downstream: IntCoAcceptor<R>): IntCoPipeline<R> = when (charsetName) {
+            "UTF-16" -> CoCodePoint_UTF16(downstream)
+            else -> CoCodePoint_UTF8(downstream)
+        }
+
+    fun <R> getEncoder(charset: Charset, downstream: IntCoAcceptor<R>) = getEncoder(charset.name(), downstream)
 
 }
