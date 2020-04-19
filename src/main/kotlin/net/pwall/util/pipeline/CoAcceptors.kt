@@ -26,6 +26,7 @@
 package net.pwall.util.pipeline
 
 import kotlinx.coroutines.channels.SendChannel
+import kotlinx.coroutines.io.ByteWriteChannel
 
 /**
  * The base interface for pipeline and acceptor classes.
@@ -241,6 +242,33 @@ class ChannelCoAcceptor<A>(private val channel: SendChannel<A>) : AbstractCoAcce
     override fun close() {
         super.close()
         channel.close()
+    }
+
+}
+
+/**
+ * An implementation of [IntCoAcceptor] that sends the value to a [ByteWriteChannel].
+ *
+ * The [Int] values are expected to be in the range 0..255, i.e. byte values.  That makes this class suitable as the
+ * downstream acceptor for an encoder pipeline.
+ */
+class ByteChannelCoAcceptor(private val channel: ByteWriteChannel) : AbstractIntCoAcceptor<Unit>() {
+
+    /**
+     * Accept a value, after `closed` check and test for end of data.  Send the value to the [ByteWriteChannel].
+     *
+     * @param   value       the input value
+     */
+    override suspend fun acceptInt(value: Int) {
+        channel.writeByte(value.toByte())
+    }
+
+    /**
+     * Close the acceptor.
+     */
+    override fun close() {
+        super.close()
+        channel.close(null)
     }
 
 }

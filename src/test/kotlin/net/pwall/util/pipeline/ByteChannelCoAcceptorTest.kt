@@ -1,5 +1,5 @@
 /*
- * @(#) StringCoAcceptor.kt
+ * @(#) ByteChannelCoAcceptorTest.kt
  *
  * co-pipelines   Pipeline library for Kotlin coroutines
  * Copyright (c) 2020 Peter Wall
@@ -25,25 +25,26 @@
 
 package net.pwall.util.pipeline
 
-class StringCoAcceptor(size: Int = 2000) : AbstractIntCoAcceptor<String>() {
+import kotlinx.coroutines.io.ByteChannel
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import kotlin.test.Test
+import kotlin.test.assertEquals
 
-    init {
-        require(size in 8..4096) { "Size out of range - $size" }
-    }
+class ByteChannelCoAcceptorTest {
 
-    private var charArray = CharArray(size)
-    private var index = 0
-
-    override suspend fun acceptInt(value: Int) {
-        if (index == charArray.size) {
-            val newArray = CharArray(charArray.size * 2)
-            charArray.copyInto(newArray, 0, 0, index)
-            charArray = newArray
+    @Test fun `should send data to a ByteChannel`() = runBlocking {
+        val channel = ByteChannel(true)
+        val job = launch {
+            assertEquals('H'.toByte(), channel.readByte())
+            assertEquals('e'.toByte(), channel.readByte())
+            assertEquals('l'.toByte(), channel.readByte())
+            assertEquals('l'.toByte(), channel.readByte())
+            assertEquals('o'.toByte(), channel.readByte())
         }
-        charArray[index++] = value.toChar()
+        val byteChannelCoAcceptor = ByteChannelCoAcceptor(channel)
+        byteChannelCoAcceptor.accept("Hello")
+        job.join()
     }
-
-    override val result: String
-        get() = String(charArray, 0, index)
 
 }
