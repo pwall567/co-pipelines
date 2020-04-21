@@ -2,6 +2,10 @@
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
+## [0.4.1] - 2020-04-21
+### Changed
+- `pom.xml`: updated dependency versions
+
 ## [0.4] - 2020-04-19
 ### Added
 - `ByteChannelCoAcceptor`: sends data to a Kotlin `ByteWriteChannel`
