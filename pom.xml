@@ -5,7 +5,7 @@
 
   <groupId>net.pwall.util</groupId>
   <artifactId>co-pipelines</artifactId>
-  <version>0.4.1</version>
+  <version>0.5</version>
   <name>Kotlin coroutine pipelines</name>
   <description>Kotlin coroutine implementation of the pipelines library</description>
   <packaging>jar</packaging>

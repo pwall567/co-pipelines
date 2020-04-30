@@ -73,16 +73,25 @@ suspend fun IntCoAcceptor<*>.output(cs: CharSequence) {
     cs.forEach { accept(it.toInt()) }
 }
 
+/**
+ * Output a [Byte] as two hexadecimal characters.
+ */
 suspend fun IntCoAcceptor<*>.outputHex(byte: Byte) {
     output(Strings.hexDigits[(byte.toInt() ushr 4) and 0xF])
     output(Strings.hexDigits[byte.toInt() and 0xF])
 }
 
+/**
+ * Output a [Short] as four hexadecimal characters.
+ */
 suspend fun IntCoAcceptor<*>.outputHex(short: Short) {
     outputHex((short.toInt() ushr 8).toByte())
     outputHex(short.toByte())
 }
 
+/**
+ * Output an [Int] as a decimal string.
+ */
 suspend fun IntCoAcceptor<*>.outputInt(i: Int) {
     if (i < 0) {
         if (i == Int.MIN_VALUE) {
@@ -96,6 +105,9 @@ suspend fun IntCoAcceptor<*>.outputInt(i: Int) {
         outputPositiveInt(i)
 }
 
+/**
+ * Output a positive [Int] as a decimal string.
+ */
 suspend fun IntCoAcceptor<*>.outputPositiveInt(i: Int) {
     when {
         i >= 100 -> {
@@ -113,6 +125,9 @@ suspend fun IntCoAcceptor<*>.outputPositiveInt(i: Int) {
     }
 }
 
+/**
+ * Output a [Long] as a decimal string.
+ */
 suspend fun IntCoAcceptor<*>.outputLong(i: Long) {
     if (i < 0) {
         if (i == Long.MIN_VALUE) {
@@ -126,6 +141,9 @@ suspend fun IntCoAcceptor<*>.outputLong(i: Long) {
         outputPositiveLong(i)
 }
 
+/**
+ * Output a positive [Long] as a decimal string.
+ */
 suspend fun IntCoAcceptor<*>.outputPositiveLong(i: Long) {
     when {
         i >= 100 -> {

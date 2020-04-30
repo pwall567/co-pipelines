@@ -44,6 +44,11 @@ interface BaseCoAcceptor<out R> : AutoCloseable {
     /** the result of the acceptor */
     val result: R
 
+    /**
+     * Flush the acceptor (required by some implementations - default is a no-operation).
+     */
+    fun flush() {}
+
 }
 
 /**
@@ -269,6 +274,13 @@ class ByteChannelCoAcceptor(private val channel: ByteWriteChannel) : AbstractInt
     override fun close() {
         super.close()
         channel.close(null)
+    }
+
+    /**
+     * Flush the output to the channel.
+     */
+    override fun flush() {
+        channel.flush()
     }
 
 }

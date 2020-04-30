@@ -2,6 +2,11 @@
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
+## [0.5] - 2020-05-01
+### Changed
+- `BaseCoAcceptor`: added `flush()`
+- `AbstractCoPipeline`, `AbstractIntObjectCoPipeline`, `AbstractIntCoPipeline`: propagate `flush()`
+
 ## [0.4.1] - 2020-04-21
 ### Changed
 - `pom.xml`: updated dependency versions

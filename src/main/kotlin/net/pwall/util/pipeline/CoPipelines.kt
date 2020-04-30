@@ -116,6 +116,13 @@ abstract class AbstractCoPipeline<in A, in E, out R>(private val downstream: CoA
     override val complete: Boolean
         get() = downstream.complete
 
+    /**
+     * Propagate the flush operation to the downstream acceptor.
+     */
+    override fun flush() {
+        downstream.flush()
+    }
+
 }
 
 /**
@@ -157,6 +164,13 @@ abstract class AbstractIntObjectCoPipeline<in E, out R>(private val downstream: 
     override val complete: Boolean
         get() = downstream.complete
 
+    /**
+     * Propagate the flush operation to the downstream acceptor.
+     */
+    override fun flush() {
+        downstream.flush()
+    }
+
 }
 
 /**
@@ -196,5 +210,12 @@ abstract class AbstractIntCoPipeline<out R>(private val downstream: IntCoAccepto
      */
     override val complete: Boolean
         get() = downstream.complete
+
+    /**
+     * Propagate the flush operation to the downstream acceptor.
+     */
+    override fun flush() {
+        downstream.flush()
+    }
 
 }
