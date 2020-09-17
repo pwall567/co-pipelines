@@ -2,6 +2,10 @@
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
+## [0.6] - 2020-09-17
+### Changed
+- `pom.xml`: updated Kotlin version to 1.4.0
+
 ## [0.5] - 2020-05-01
 ### Changed
 - `BaseCoAcceptor`: added `flush()`
