@@ -1,8 +1,8 @@
 /*
- * @(#) CodePointUTF16Test.kt
+ * @(#) ChannelCoAcceptor.kt
  *
  * co-pipelines   Pipeline library for Kotlin coroutines
- * Copyright (c) 2020 Peter Wall
+ * Copyright (c) 2021 Peter Wall
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,33 +23,35 @@
  * SOFTWARE.
  */
 
-package net.pwall.util.pipeline
+package net.pwall.pipeline
 
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.channels.SendChannel
 
-import kotlin.test.Test
-import kotlin.test.assertTrue
-import kotlin.test.expect
+/**
+ * An implementation of [CoAcceptor] that sends the value to a [SendChannel].
+ *
+ * @author  Peter Wall
+ */
+class ChannelCoAcceptor<A>(private val channel: SendChannel<A>) : AbstractCoAcceptor<A, Unit>() {
 
-class CodePointUTF16Test {
-
-    @Test fun `should pass through BMP code point`() = runBlocking {
-        val pipe = CoCodePoint_UTF16(TestIntCoAcceptor())
-        pipe.accept('A'.toInt())
-        assertTrue(pipe.complete)
-        val result = pipe.result
-        expect(1) { result.size }
-        expect('A'.toInt()) { result[0] }
+    /**
+     * Accept a value, after `closed` check and test for end of data.  Send the value to the [SendChannel].
+     *
+     * @param   value       the input value
+     */
+    override suspend fun acceptObject(value: A) {
+        channel.send(value)
     }
 
-    @Test fun `should convert surrogate pair`() = runBlocking {
-        val pipe = CoCodePoint_UTF16(TestIntCoAcceptor())
-        pipe.accept(0x1F602)
-        assertTrue(pipe.complete)
-        val result = pipe.result
-        expect(2) { result.size }
-        expect(0xD83D) { result[0] }
-        expect(0xDE02) { result[1] }
+    /**
+     * Close the acceptor.
+     */
+    override suspend fun close() {
+        super.close()
+        channel.close()
     }
+
+    override val result: Unit
+        get() = throw UnsupportedOperationException()
 
 }

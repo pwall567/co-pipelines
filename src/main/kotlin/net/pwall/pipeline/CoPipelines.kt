@@ -2,7 +2,7 @@
  * @(#) CoPipelines.kt
  *
  * co-pipelines   Pipeline library for Kotlin coroutines
- * Copyright (c) 2020 Peter Wall
+ * Copyright (c) 2020, 2021 Peter Wall
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,7 +23,30 @@
  * SOFTWARE.
  */
 
-package net.pwall.util.pipeline
+package net.pwall.pipeline
+
+/**
+ * Base interface for pipeline classes.
+ *
+ * @param   R       the result type
+ */
+interface BaseCoPipeline<out R> : BaseCoAcceptor<R> {
+
+    val downstream: BaseCoAcceptor<R>
+
+    val stageComplete: Boolean
+        get() = true
+
+    override val complete: Boolean
+        get() = stageComplete && downstream.complete
+
+    override val result: R
+        get() {
+            check(complete) { "Sequence is not complete" }
+            return downstream.result
+        }
+
+}
 
 /**
  * A pipeline that accepts and emits values of the specified types.
@@ -32,7 +55,7 @@ package net.pwall.util.pipeline
  * @param   E       the emitted (downstream) type
  * @param   R       the result type
  */
-interface CoPipeline<in A, in E, out R> : CoAcceptor<A, R> {
+interface CoPipeline<in A, in E, out R> : CoAcceptor<A, R>, BaseCoPipeline<R> {
 
     /**
      * Emit a value, that is, forward a value to the downstream acceptor.
@@ -49,7 +72,7 @@ interface CoPipeline<in A, in E, out R> : CoAcceptor<A, R> {
  * @param   E       the emitted (downstream) type
  * @param   R       the result type
  */
-interface IntObjectCoPipeline<in E, out R> : IntCoAcceptor<R> {
+interface IntObjectCoPipeline<in E, out R> : IntCoAcceptor<R>, BaseCoPipeline<R> {
 
     /**
      * Emit a value, that is, forward a value to the downstream acceptor.
@@ -61,11 +84,28 @@ interface IntObjectCoPipeline<in E, out R> : IntCoAcceptor<R> {
 }
 
 /**
+ * A pipeline that takes object values and emits integer values.
+ *
+ * @param   A       the accepted (input) type
+ * @param   R       the result type
+ */
+interface ObjectIntCoPipeline<in A, out R> : CoAcceptor<A, R>, BaseCoPipeline<R> {
+
+    /**
+     * Emit a value, that is, forward a value to the downstream acceptor.
+     *
+     * @param   value   the value
+     */
+    suspend fun emit(value: Int)
+
+}
+
+/**
  * A pipeline that accepts and emits integer values.
  *
  * @param   R       the result type
  */
-interface IntCoPipeline<out R> : IntCoAcceptor<R> {
+interface IntCoPipeline<out R> : IntCoAcceptor<R>, BaseCoPipeline<R> {
 
     /**
      * Emit a value, that is, forward a value to the downstream acceptor.
@@ -83,13 +123,13 @@ interface IntCoPipeline<out R> : IntCoAcceptor<R> {
  * @param   E       the emitted (downstream) type
  * @param   R       the result type
  */
-abstract class AbstractCoPipeline<in A, in E, out R>(private val downstream: CoAcceptor<E, R>) :
+abstract class AbstractCoPipeline<in A, in E, out R>(override val downstream: CoAcceptor<E, R>) :
         AbstractCoAcceptor<A, R>(), CoPipeline<A, E, R> {
 
     /**
      * Close the pipeline.
      */
-    override fun close() {
+    override suspend fun close() {
         downstream.close()
         super.close()
     }
@@ -104,22 +144,9 @@ abstract class AbstractCoPipeline<in A, in E, out R>(private val downstream: CoA
     }
 
     /**
-     * Get the result (defaults to the result of the downstream acceptor).
-     */
-    override val result: R
-        get() = downstream.result
-
-    /**
-     * Return `true` if all sequences in the input are complete, that is, the input is not in the middle of a
-     * sequence requiring more data.  The default implementation tests whether the downstream acceptor is complete.
-     */
-    override val complete: Boolean
-        get() = downstream.complete
-
-    /**
      * Propagate the flush operation to the downstream acceptor.
      */
-    override fun flush() {
+    override suspend fun flush() {
         downstream.flush()
     }
 
@@ -131,13 +158,13 @@ abstract class AbstractCoPipeline<in A, in E, out R>(private val downstream: CoA
  * @param   E       the emitted (downstream) type
  * @param   R       the result type
  */
-abstract class AbstractIntObjectCoPipeline<in E, out R>(private val downstream: CoAcceptor<E, R>) :
+abstract class AbstractIntObjectCoPipeline<in E, out R>(override val downstream: CoAcceptor<E, R>) :
         AbstractIntCoAcceptor<R>(), IntObjectCoPipeline<E, R> {
 
     /**
      * Close the pipeline.
      */
-    override fun close() {
+    override suspend fun close() {
         downstream.close()
         super.close()
     }
@@ -152,39 +179,27 @@ abstract class AbstractIntObjectCoPipeline<in E, out R>(private val downstream: 
     }
 
     /**
-     * Get the result (defaults to the result of the downstream acceptor).
-     */
-    override val result: R
-        get() = downstream.result
-
-    /**
-     * Return `true` if all sequences in the input are complete, that is, the input is not in the middle of a
-     * sequence requiring more data.  The default implementation tests whether the downstream acceptor is complete.
-     */
-    override val complete: Boolean
-        get() = downstream.complete
-
-    /**
      * Propagate the flush operation to the downstream acceptor.
      */
-    override fun flush() {
+    override suspend fun flush() {
         downstream.flush()
     }
 
 }
 
 /**
- * Abstract implementation of [IntCoPipeline].
+ * Abstract implementation of [ObjectIntCoPipeline].
  *
+ * @param   A       the accepted (input) type
  * @param   R       the result type
  */
-abstract class AbstractIntCoPipeline<out R>(private val downstream: IntCoAcceptor<R>) : AbstractIntCoAcceptor<R>(),
-        IntCoPipeline<R> {
+abstract class AbstractObjectIntCoPipeline<in A, out R>(override val downstream: IntCoAcceptor<R>) :
+        AbstractCoAcceptor<A, R>(), ObjectIntCoPipeline<A, R> {
 
     /**
      * Close the pipeline.
      */
-    override fun close() {
+    override suspend fun close() {
         downstream.close()
         super.close()
     }
@@ -199,22 +214,43 @@ abstract class AbstractIntCoPipeline<out R>(private val downstream: IntCoAccepto
     }
 
     /**
-     * Get the result (defaults to the result of the downstream acceptor).
+     * Propagate the flush operation to the downstream acceptor.
      */
-    override val result: R
-        get() = downstream.result
+    override suspend fun flush() {
+        downstream.flush()
+    }
+
+}
+
+/**
+ * Abstract implementation of [IntCoPipeline].
+ *
+ * @param   R       the result type
+ */
+abstract class AbstractIntCoPipeline<out R>(override val downstream: IntCoAcceptor<R>) : AbstractIntCoAcceptor<R>(),
+        IntCoPipeline<R> {
 
     /**
-     * Return `true` if all sequences in the input are complete, that is, the input is not in the middle of a
-     * sequence requiring more data.  The default implementation tests whether the downstream acceptor is complete.
+     * Close the pipeline.
      */
-    override val complete: Boolean
-        get() = downstream.complete
+    override suspend fun close() {
+        downstream.close()
+        super.close()
+    }
+
+    /**
+     * Emit a value to the downstream [IntCoAcceptor].
+     *
+     * @param   value   the value to be forwarded
+     */
+    override suspend fun emit(value: Int) {
+        downstream.accept(value)
+    }
 
     /**
      * Propagate the flush operation to the downstream acceptor.
      */
-    override fun flush() {
+    override suspend fun flush() {
         downstream.flush()
     }
 

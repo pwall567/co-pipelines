@@ -23,31 +23,35 @@
  * SOFTWARE.
  */
 
-package net.pwall.util.pipeline
-
-import kotlinx.coroutines.channels.SendChannel
-import kotlinx.coroutines.io.ByteWriteChannel
+package net.pwall.pipeline
 
 /**
  * The base interface for pipeline and acceptor classes.
  *
  * @param   R       the result type
  */
-interface BaseCoAcceptor<out R> : AutoCloseable {
+interface BaseCoAcceptor<out R> {
 
     /** `true` if all sequences in the input are complete */
     val complete: Boolean
+        get() = true
 
     /** `true` if the acceptor is closed */
     val closed: Boolean
 
     /** the result of the acceptor */
     val result: R
+        get() = throw UnsupportedOperationException("No result possible")
 
     /**
      * Flush the acceptor (required by some implementations - default is a no-operation).
      */
-    fun flush() {}
+    suspend fun flush() {}
+
+    /**
+     * Close the acceptor.
+     */
+    suspend fun close()
 
 }
 
@@ -90,8 +94,7 @@ interface IntCoAcceptor<out R> : BaseCoAcceptor<R> {
      */
     suspend fun accept(charSequence: CharSequence) {
         for (character in charSequence)
-            accept(character.toInt())
-        close()
+            accept(character.code)
     }
 
     /**
@@ -104,7 +107,6 @@ interface IntCoAcceptor<out R> : BaseCoAcceptor<R> {
     suspend fun accept(bytes: ByteArray, offset: Int = 0, length: Int = bytes.size - offset) {
         for (i in offset until offset + length)
             accept(bytes[i].toInt())
-        close()
     }
 
 }
@@ -116,9 +118,6 @@ interface IntCoAcceptor<out R> : BaseCoAcceptor<R> {
  */
 abstract class BaseAbstractCoAcceptor<out R> : BaseCoAcceptor<R> {
 
-    /** Default `true` (all sequences in the input are complete) */
-    override val complete: Boolean = true
-
     /** `true` if the acceptor is closed */
     private var _closed = false
     override val closed: Boolean
@@ -127,16 +126,10 @@ abstract class BaseAbstractCoAcceptor<out R> : BaseCoAcceptor<R> {
     /**
      * Close the acceptor.  Throws an exception if the acceptor is not in the "complete" state.
      */
-    override fun close() {
+    override suspend fun close() {
         check(complete) { "Sequence not complete" }
         _closed = true
     }
-
-    /**
-     * Get the result object (default implementation throws exception).
-     */
-    override val result: R
-        get() = throw IllegalStateException("Acceptor does not have a result")
 
 }
 
@@ -204,6 +197,26 @@ abstract class AbstractIntCoAcceptor<out R> : BaseAbstractCoAcceptor<R>(), IntCo
 }
 
 /**
+ * A [CoAcceptor] that accumulates its input tp a [List].
+ */
+class ListCoAcceptor<A>(initialCapacity: Int = defaultInitialCapacity) : AbstractCoAcceptor<A, List<A>>() {
+
+    private val list = ArrayList<A>(initialCapacity)
+
+    override suspend fun acceptObject(value: A) {
+        list.add(value)
+    }
+
+    override val result: List<A>
+        get() = list
+
+    companion object {
+        const val defaultInitialCapacity = 10
+    }
+
+}
+
+/**
  * A simple implementation of [CoAcceptor] that takes a lambda as the accepting function.
  */
 class SimpleCoAcceptor<A>(val block: suspend (A) -> Unit) : AbstractCoAcceptor<A, Unit>() {
@@ -217,6 +230,9 @@ class SimpleCoAcceptor<A>(val block: suspend (A) -> Unit) : AbstractCoAcceptor<A
         block(value)
     }
 
+    override val result: Unit
+        get() = throw UnsupportedOperationException()
+
 }
 
 /**
@@ -226,61 +242,3 @@ class SimpleCoAcceptor<A>(val block: suspend (A) -> Unit) : AbstractCoAcceptor<A
  * @param   A       the accepted (input) type
  */
 fun <A> simpleCoAcceptor(block: suspend (A) -> Unit) = SimpleCoAcceptor(block)
-
-/**
- * An implementation of [CoAcceptor] that sends the value to a [SendChannel].
- */
-class ChannelCoAcceptor<A>(private val channel: SendChannel<A>) : AbstractCoAcceptor<A, Unit>() {
-
-    /**
-     * Accept a value, after `closed` check and test for end of data.  Send the value to the [SendChannel].
-     *
-     * @param   value       the input value
-     */
-    override suspend fun acceptObject(value: A) {
-        channel.send(value)
-    }
-
-    /**
-     * Close the acceptor.
-     */
-    override fun close() {
-        super.close()
-        channel.close()
-    }
-
-}
-
-/**
- * An implementation of [IntCoAcceptor] that sends the value to a [ByteWriteChannel].
- *
- * The [Int] values are expected to be in the range 0..255, i.e. byte values.  That makes this class suitable as the
- * downstream acceptor for an encoder pipeline.
- */
-class ByteChannelCoAcceptor(private val channel: ByteWriteChannel) : AbstractIntCoAcceptor<Unit>() {
-
-    /**
-     * Accept a value, after `closed` check and test for end of data.  Send the value to the [ByteWriteChannel].
-     *
-     * @param   value       the input value
-     */
-    override suspend fun acceptInt(value: Int) {
-        channel.writeByte(value.toByte())
-    }
-
-    /**
-     * Close the acceptor.
-     */
-    override fun close() {
-        super.close()
-        channel.close(null)
-    }
-
-    /**
-     * Flush the output to the channel.
-     */
-    override fun flush() {
-        channel.flush()
-    }
-
-}

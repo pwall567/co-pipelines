@@ -1,5 +1,5 @@
 /*
- * @(#) SimpleCoAcceptorTest.kt
+ * @(#) CodePointUTF16Test.kt
  *
  * co-pipelines   Pipeline library for Kotlin coroutines
  * Copyright (c) 2020 Peter Wall
@@ -23,31 +23,34 @@
  * SOFTWARE.
  */
 
-package net.pwall.util.pipeline
+package net.pwall.pipeline.codec
 
-import kotlinx.coroutines.runBlocking
 import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import kotlin.test.expect
+import kotlinx.coroutines.runBlocking
 
-class SimpleCoAcceptorTest {
+import net.pwall.pipeline.TestIntCoAcceptor
 
-    @Test fun `should pipeline data to a simple acceptor`() = runBlocking {
-        val list = ArrayList<Int>()
-        val pipeline = simpleCoAcceptor<Int> {
-            list.add(it)
-        }
-        pipeline.accept(12345)
-        pipeline.accept(67890)
-        pipeline.accept(888)
-        assertFalse(pipeline.closed)
-        pipeline.accept(null)
-        assertTrue(pipeline.closed)
-        assertEquals(3, list.size)
-        assertEquals(12345, list[0])
-        assertEquals(67890, list[1])
-        assertEquals(888, list[2])
+class CodePointUTF16Test {
+
+    @Test fun `should pass through BMP code point`() = runBlocking {
+        val pipe = CoCodePoint_UTF16(TestIntCoAcceptor())
+        pipe.accept('A'.code)
+        assertTrue(pipe.complete)
+        val result = pipe.result
+        expect(1) { result.size }
+        expect('A'.code) { result[0] }
+    }
+
+    @Test fun `should convert surrogate pair`() = runBlocking {
+        val pipe = CoCodePoint_UTF16(TestIntCoAcceptor())
+        pipe.accept(0x1F602)
+        assertTrue(pipe.complete)
+        val result = pipe.result
+        expect(2) { result.size }
+        expect(0xD83D) { result[0] }
+        expect(0xDE02) { result[1] }
     }
 
 }

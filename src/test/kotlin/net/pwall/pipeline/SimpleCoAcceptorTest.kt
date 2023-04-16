@@ -1,5 +1,5 @@
 /*
- * @(#) ByteChannelCoAcceptorTest.kt
+ * @(#) SimpleCoAcceptorTest.kt
  *
  * co-pipelines   Pipeline library for Kotlin coroutines
  * Copyright (c) 2020 Peter Wall
@@ -23,28 +23,31 @@
  * SOFTWARE.
  */
 
-package net.pwall.util.pipeline
+package net.pwall.pipeline
 
-import kotlinx.coroutines.io.ByteChannel
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
+import kotlinx.coroutines.runBlocking
 
-class ByteChannelCoAcceptorTest {
+class SimpleCoAcceptorTest {
 
-    @Test fun `should send data to a ByteChannel`() = runBlocking {
-        val channel = ByteChannel(true)
-        val job = launch {
-            assertEquals('H'.toByte(), channel.readByte())
-            assertEquals('e'.toByte(), channel.readByte())
-            assertEquals('l'.toByte(), channel.readByte())
-            assertEquals('l'.toByte(), channel.readByte())
-            assertEquals('o'.toByte(), channel.readByte())
+    @Test fun `should pipeline data to a simple acceptor`() = runBlocking {
+        val list = ArrayList<Int>()
+        val pipeline = simpleCoAcceptor<Int> {
+            list.add(it)
         }
-        val byteChannelCoAcceptor = ByteChannelCoAcceptor(channel)
-        byteChannelCoAcceptor.accept("Hello")
-        job.join()
+        pipeline.accept(12345)
+        pipeline.accept(67890)
+        pipeline.accept(888)
+        assertFalse(pipeline.closed)
+        pipeline.accept(null)
+        assertTrue(pipeline.closed)
+        assertEquals(3, list.size)
+        assertEquals(12345, list[0])
+        assertEquals(67890, list[1])
+        assertEquals(888, list[2])
     }
 
 }

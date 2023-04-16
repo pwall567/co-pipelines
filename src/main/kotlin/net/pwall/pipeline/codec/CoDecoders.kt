@@ -2,7 +2,7 @@
  * @(#) CoDecoders.kt
  *
  * co-pipelines   Pipeline library for Kotlin coroutines
- * Copyright (c) 2020 Peter Wall
+ * Copyright (c) 2020, 2021, 2023 Peter Wall
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,10 +23,21 @@
  * SOFTWARE.
  */
 
-package net.pwall.util.pipeline
+@file:Suppress("ClassName")
+
+package net.pwall.pipeline.codec
 
 import java.nio.charset.Charset
 
+import net.pwall.pipeline.AbstractIntCoPipeline
+import net.pwall.pipeline.IntCoAcceptor
+import net.pwall.pipeline.IntCoPipeline
+
+/**
+ * An encoder [IntCoPipeline] to convert Unicode code points to UTF-8.
+ *
+ * @param   R       the pipeline result type
+ */
 class CoCodePoint_UTF8<R>(downstream: IntCoAcceptor<R>) : AbstractIntCoPipeline<R>(downstream) {
 
     override suspend fun acceptInt(value: Int) {
@@ -53,34 +64,42 @@ class CoCodePoint_UTF8<R>(downstream: IntCoAcceptor<R>) : AbstractIntCoPipeline<
 
 }
 
+/**
+ * An encoder [IntCoPipeline] to convert Unicode code points to UTF-16.
+ *
+ * @param   R       the pipeline result type
+ */
 class CoCodePoint_UTF16<R>(downstream: IntCoAcceptor<R>) : AbstractIntCoPipeline<R>(downstream) {
 
     override suspend fun acceptInt(value: Int) {
         if (Character.isBmpCodePoint(value))
             emit(value)
         else {
-            emit(Character.highSurrogate(value).toInt())
-            emit(Character.lowSurrogate(value).toInt())
+            emit(Character.highSurrogate(value).code)
+            emit(Character.lowSurrogate(value).code)
         }
     }
 
 }
 
+/**
+ * A decoder [IntCoPipeline] to convert UTF-8 to Unicode code points.
+ *
+ * @param   R       the pipeline result type
+ */
 class CoUTF8_CodePoint<R>(downstream: IntCoAcceptor<R>) : AbstractIntCoPipeline<R>(downstream) {
 
-    private val threeByte1: suspend (Int) -> Unit = { i -> intermediate(i, terminal) }
+    private val penultimate: suspend (Int) -> Unit = { i -> intermediate(i, terminal) }
 
-    private val fourByte2: suspend (Int) -> Unit = { i -> intermediate(i, terminal) }
-
-    private val fourByte1: suspend (Int) -> Unit = { i -> intermediate(i, fourByte2) }
+    private val fourByte2: suspend (Int) -> Unit = { i -> intermediate(i, penultimate) }
 
     private val normal: suspend (Int) -> Unit = { i ->
         when {
             i == -1 || (i and 0x80) == 0 -> emit(i)
             (i and 0x40) == 0 -> throw IllegalArgumentException("Illegal character in UTF-8")
             (i and 0x20) == 0 -> startSequence(i and 0x1F, terminal)
-            (i and 0x10) == 0 -> startSequence(i and 0x0F, threeByte1)
-            (i and 0x08) == 0 -> startSequence(i and 0x07, fourByte1)
+            (i and 0x10) == 0 -> startSequence(i and 0x0F, penultimate)
+            (i and 0x08) == 0 -> startSequence(i and 0x07, fourByte2)
             else -> throw IllegalArgumentException("Illegal character in UTF-8")
         }
     }
@@ -119,6 +138,11 @@ class CoUTF8_CodePoint<R>(downstream: IntCoAcceptor<R>) : AbstractIntCoPipeline<
 
 }
 
+/**
+ * A decoder [IntCoPipeline] to convert UTF-16 to Unicode code points.
+ *
+ * @param   R       the pipeline result type
+ */
 class CoUTF16_CodePoint<R>(downstream: IntCoAcceptor<R>) : AbstractIntCoPipeline<R>(downstream) {
 
     private val normal: suspend (Int) -> Unit = { i ->
@@ -148,14 +172,51 @@ class CoUTF16_CodePoint<R>(downstream: IntCoAcceptor<R>) : AbstractIntCoPipeline
 
 }
 
+/**
+ * A decoder [IntCoPipeline] to convert one-to-one mapping character encodings to Unicode code points.
+ *
+ * @param   R       the pipeline result type
+ */
 open class DecodingCoPipeline<R>(downstream: IntCoAcceptor<R>, private val table: String) :
         AbstractIntCoPipeline<R>(downstream) {
 
     override suspend fun acceptInt(value: Int) {
         when (value) {
             in 0..0x7F -> emit(value)
-            in 0x80..0xFF -> emit(table[value - 0x80].toInt())
+            in 0x80..0xFF -> emit(table[value - 0x80].code)
             else -> throw IllegalArgumentException("Illegal character")
+        }
+    }
+
+}
+
+/**
+ * An encoder [IntCoPipeline] to convert Unicode code points to one-to-one mapping character encodings.
+ *
+ * @param   R       the pipeline result type
+ */
+open class EncodingCoPipeline<R>(downstream: IntCoAcceptor<R>, private val reverseTable: IntArray) :
+        AbstractIntCoPipeline<R>(downstream) {
+
+    override suspend fun acceptInt(value: Int) {
+        if (value in 0..0x7F)
+            emit(value)
+        else {
+            var lo = 0
+            var hi = reverseTable.size
+            while (lo < hi) {
+                val mid = (hi + lo) ushr 1
+                val item = reverseTable[mid] ushr 16
+                when {
+                    item < value -> lo = mid + 1
+                    item > value -> hi = mid
+                    else -> {
+                        emit(reverseTable[mid] and 0xFFFF)
+                        return
+                    }
+                }
+            }
+            throw IllegalArgumentException("Illegal character")
         }
     }
 
@@ -173,9 +234,15 @@ class CoWindows1252_CodePoint<R>(downstream: IntCoAcceptor<R>) : DecodingCoPipel
                 "\u00D0\u00D1\u00D2\u00D3\u00D4\u00D5\u00D6\u00D7\u00D8\u00D9\u00DA\u00DB\u00DC\u00DD\u00DE\u00DF" +
                 "\u00E0\u00E1\u00E2\u00E3\u00E4\u00E5\u00E6\u00E7\u00E8\u00E9\u00EA\u00EB\u00EC\u00ED\u00EE\u00EF" +
                 "\u00F0\u00F1\u00F2\u00F3\u00F4\u00F5\u00F6\u00F7\u00F8\u00F9\u00FA\u00FB\u00FC\u00FD\u00FE\u00FF"
+        val reverseTable: IntArray by lazy {
+            table.toCharArray().mapIndexed { i, c -> (c.code shl 16) or (i + 0x80) }.toIntArray().also { it.sort() }
+        }
     }
 
 }
+
+class CoCodepoint_Windows1252<R>(downstream: IntCoAcceptor<R>) :
+        EncodingCoPipeline<R>(downstream, CoWindows1252_CodePoint.reverseTable)
 
 class CoISO8859_1_CodePoint<R>(downstream: IntCoAcceptor<R>) : DecodingCoPipeline<R>(downstream, table) {
 
@@ -189,9 +256,15 @@ class CoISO8859_1_CodePoint<R>(downstream: IntCoAcceptor<R>) : DecodingCoPipelin
                 "\u00D0\u00D1\u00D2\u00D3\u00D4\u00D5\u00D6\u00D7\u00D8\u00D9\u00DA\u00DB\u00DC\u00DD\u00DE\u00DF" +
                 "\u00E0\u00E1\u00E2\u00E3\u00E4\u00E5\u00E6\u00E7\u00E8\u00E9\u00EA\u00EB\u00EC\u00ED\u00EE\u00EF" +
                 "\u00F0\u00F1\u00F2\u00F3\u00F4\u00F5\u00F6\u00F7\u00F8\u00F9\u00FA\u00FB\u00FC\u00FD\u00FE\u00FF"
+        val reverseTable: IntArray by lazy {
+            table.toCharArray().mapIndexed { i, c -> (c.code shl 16) or (i + 0x80) }.toIntArray().also { it.sort() }
+        }
     }
 
 }
+
+class CoCodepoint_ISO8859_1<R>(downstream: IntCoAcceptor<R>) :
+        EncodingCoPipeline<R>(downstream, CoISO8859_1_CodePoint.reverseTable)
 
 class CoISO8859_15_CodePoint<R>(downstream: IntCoAcceptor<R>) : DecodingCoPipeline<R>(downstream, table) {
 
@@ -205,15 +278,52 @@ class CoISO8859_15_CodePoint<R>(downstream: IntCoAcceptor<R>) : DecodingCoPipeli
                 "\u00D0\u00D1\u00D2\u00D3\u00D4\u00D5\u00D6\u00D7\u00D8\u00D9\u00DA\u00DB\u00DC\u00DD\u00DE\u00DF" +
                 "\u00E0\u00E1\u00E2\u00E3\u00E4\u00E5\u00E6\u00E7\u00E8\u00E9\u00EA\u00EB\u00EC\u00ED\u00EE\u00EF" +
                 "\u00F0\u00F1\u00F2\u00F3\u00F4\u00F5\u00F6\u00F7\u00F8\u00F9\u00FA\u00FB\u00FC\u00FD\u00FE\u00FF"
+        val reverseTable: IntArray by lazy {
+            table.toCharArray().mapIndexed { i, c -> (c.code shl 16) or (i + 0x80) }.toIntArray().also { it.sort() }
+        }
     }
 
 }
+
+class CoCodepoint_ISO8859_15<R>(downstream: IntCoAcceptor<R>) :
+        EncodingCoPipeline<R>(downstream, CoISO8859_15_CodePoint.reverseTable)
 
 class CoASCII_CodePoint<R>(downstream: IntCoAcceptor<R>) : AbstractIntCoPipeline<R>(downstream) {
 
     override suspend fun acceptInt(value: Int) {
         require(value in 0..0x7F) { "Illegal character" }
         emit(value);
+    }
+
+}
+
+class CoCodePoint_ASCII<R>(downstream: IntCoAcceptor<R>) : AbstractIntCoPipeline<R>(downstream) {
+
+    override suspend fun acceptInt(value: Int) {
+        require(value in 0..0x7F) { "Illegal character" }
+        emit(value);
+    }
+
+}
+
+class SwitchableDecoder<R>(downstream: IntCoAcceptor<R>) : AbstractIntCoPipeline<R>(downstream) {
+
+    private var delegate: IntCoAcceptor<R> = CoASCII_CodePoint<R>(downstream)
+
+    override suspend fun acceptInt(value: Int) {
+        delegate.accept(value)
+    }
+
+    fun switchTo(delegate: IntCoAcceptor<R>) {
+        this.delegate = delegate
+    }
+
+    fun switchTo(charsetName: String) {
+        delegate = CoDecoderFactory.getDecoder(charsetName, downstream)
+    }
+
+    fun switchTo(charset: Charset) {
+        delegate = CoDecoderFactory.getDecoder(charset, downstream)
     }
 
 }
@@ -235,6 +345,10 @@ object CoDecoderFactory {
 object CoEncoderFactory {
 
     fun <R> getEncoder(charsetName: String, downstream: IntCoAcceptor<R>): IntCoPipeline<R> = when (charsetName) {
+            "windows-1252" -> CoCodepoint_Windows1252(downstream)
+            "ISO-8859-1" -> CoCodepoint_ISO8859_1(downstream)
+            "ISO-8859-15" -> CoCodepoint_ISO8859_15(downstream)
+            "US-ASCII" -> CoCodePoint_ASCII(downstream)
             "UTF-16" -> CoCodePoint_UTF16(downstream)
             else -> CoCodePoint_UTF8(downstream)
         }

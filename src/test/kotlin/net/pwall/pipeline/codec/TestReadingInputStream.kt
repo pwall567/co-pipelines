@@ -23,24 +23,27 @@
  * SOFTWARE.
  */
 
-package net.pwall.util.pipeline
+package net.pwall.pipeline.codec
 
+import kotlin.test.Test
+import kotlin.test.expect
+import kotlin.test.fail
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
-import kotlin.test.Test
-import kotlin.test.expect
+
+import net.pwall.pipeline.StringCoAcceptor
 
 class TestReadingInputStream {
 
     @Test fun `should read and convert external resource`() = runBlocking {
         val pipe = withContext(Dispatchers.IO) {
-            this::class.java.getResourceAsStream("/test1.txt").use {
+            this::class.java.getResourceAsStream("/test1.txt")?.use {
                 CoUTF8_CodePoint(CoCodePoint_UTF16(StringCoAcceptor(120))).apply {
                     while (!closed)
                         accept(it.read())
                 }
-            }
+            } ?: fail("Couldn't locate /test1.txt")
         }
         expect(expected) { pipe.result }
     }

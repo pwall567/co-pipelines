@@ -1,8 +1,8 @@
 /*
- * @(#) TestIntCoAcceptor.kt
+ * @(#) LineCoPipelineTest.kt
  *
  * co-pipelines   Pipeline library for Kotlin coroutines
- * Copyright (c) 2020 Peter Wall
+ * Copyright (c) 2021 Peter Wall
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,17 +23,34 @@
  * SOFTWARE.
  */
 
-package net.pwall.util.pipeline
+package net.pwall.pipeline
 
-class TestIntCoAcceptor : AbstractIntCoAcceptor<List<Int>>() {
+import kotlin.test.Test
+import kotlin.test.expect
+import kotlinx.coroutines.runBlocking
 
-    private val list = ArrayList<Int>()
+class LineCoPipelineTest {
 
-    override suspend fun acceptInt(value: Int) {
-        list.add(value)
+    @Test fun `should split text on newlines`() = runBlocking {
+        val input = "abc\ndef\nghi\n"
+        val pipeline = LineCoPipeline(ListCoAcceptor()).apply { accept(input) }
+        val expected = listOf("abc", "def", "ghi")
+        expect(expected) { pipeline.result }
     }
 
-    override val result: List<Int>
-        get() = list
+    @Test fun `should split text on CRLF`() = runBlocking {
+        val input = "abc\r\ndef\r\nghi\r\n"
+        val pipeline = LineCoPipeline(ListCoAcceptor()).apply { accept(input) }
+        val expected = listOf("abc", "def", "ghi")
+        expect(expected) { pipeline.result }
+    }
+
+    @Test fun `should allow missing line terminator at end`() = runBlocking {
+        val input = "abc\nde"
+        val pipeline = LineCoPipeline(ListCoAcceptor())
+        val result = pipeline.use { it.accept(input) }
+        val expected = listOf("abc", "de")
+        expect(expected) { result }
+    }
 
 }

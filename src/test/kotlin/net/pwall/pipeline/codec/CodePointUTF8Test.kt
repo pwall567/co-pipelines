@@ -23,23 +23,24 @@
  * SOFTWARE.
  */
 
-package net.pwall.util.pipeline
-
-import kotlinx.coroutines.runBlocking
+package net.pwall.pipeline.codec
 
 import kotlin.test.Test
 import kotlin.test.assertTrue
 import kotlin.test.expect
+import kotlinx.coroutines.runBlocking
+
+import net.pwall.pipeline.TestIntCoAcceptor
 
 class CodePointUTF8Test {
 
     @Test fun `should pass through ASCII`() = runBlocking {
         val pipe = CoCodePoint_UTF8(TestIntCoAcceptor())
-        pipe.accept('A'.toInt())
+        pipe.accept('A'.code)
         assertTrue(pipe.complete)
         val result = pipe.result
         expect(1) { result.size }
-        expect('A'.toInt()) { result[0] }
+        expect('A'.code) { result[0] }
     }
 
     @Test fun `should pass through multiple ASCII`() = runBlocking {
@@ -48,9 +49,9 @@ class CodePointUTF8Test {
         assertTrue(pipe.complete)
         val result = pipe.result
         expect(3) { result.size }
-        expect('A'.toInt()) { result[0] }
-        expect('B'.toInt()) { result[1] }
-        expect('C'.toInt()) { result[2] }
+        expect('A'.code) { result[0] }
+        expect('B'.code) { result[1] }
+        expect('C'.code) { result[2] }
     }
 
     @Test fun `should pass through two byte chars`() = runBlocking {

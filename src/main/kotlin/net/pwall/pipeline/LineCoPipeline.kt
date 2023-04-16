@@ -1,8 +1,8 @@
 /*
- * @(#) ChannelCoAcceptorTest.kt
+ * @(#) LineCoPipeline.kt
  *
  * co-pipelines   Pipeline library for Kotlin coroutines
- * Copyright (c) 2020 Peter Wall
+ * Copyright (c) 2021 Peter Wall
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,37 +23,46 @@
  * SOFTWARE.
  */
 
-package net.pwall.util.pipeline
+package net.pwall.pipeline
 
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
+class LineCoPipeline<out R>(downstream: CoAcceptor<String, R>, maxLength: Int = 4096) :
+        AbstractIntObjectCoPipeline<String, R>(downstream) {
 
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertFalse
-import kotlin.test.assertTrue
+    private val line = CharArray(maxLength)
+    private var index = 0
+    private var crSeen = false
 
-class ChannelCoAcceptorTest {
-
-    @Test fun `should accept sequence of objects and send to Channel`() = runBlocking {
-        val channel = Channel<String>()
-        val job = launch {
-            val iterator = channel.iterator()
-            assertTrue(iterator.hasNext())
-            assertEquals("abc", iterator.next())
-            assertTrue(iterator.hasNext())
-            assertEquals("def", iterator.next())
-            assertTrue(iterator.hasNext())
-            assertEquals("ghi", iterator.next())
-            assertFalse(iterator.hasNext())
+    override suspend fun acceptInt(value: Int) {
+        when (val char = value.toChar()) {
+            '\r' -> {
+                emitLine()
+                crSeen = true
+            }
+            '\n' -> {
+                if (!crSeen)
+                    emitLine()
+                crSeen = false
+            }
+            else -> {
+                if (index == line.size) {
+                    emit(String(line))
+                    index = 0
+                }
+                line[index++] = char
+                crSeen = false
+            }
         }
-        val channelCoAcceptor = ChannelCoAcceptor(channel)
-        channelCoAcceptor.accept("abc")
-        channelCoAcceptor.accept("def")
-        channelCoAcceptor.accept("ghi")
-        channelCoAcceptor.close()
-        job.join()
+    }
+
+    private suspend fun emitLine() {
+        emit(if (index == 0) "" else String(line, 0, index))
+        index = 0
+    }
+
+    override suspend fun close() {
+        if (index > 0)
+            emitLine()
+        super.close()
     }
 
 }

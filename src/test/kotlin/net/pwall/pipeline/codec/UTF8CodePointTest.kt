@@ -1,5 +1,5 @@
 /*
- * @(#) UTF16CodePointTest.kt
+ * @(#) UTF8CodePointTest.kt
  *
  * co-pipelines   Pipeline library for Kotlin coroutines
  * Copyright (c) 2020 Peter Wall
@@ -23,35 +23,61 @@
  * SOFTWARE.
  */
 
-package net.pwall.util.pipeline
-
-import kotlinx.coroutines.runBlocking
+package net.pwall.pipeline.codec
 
 import kotlin.test.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import kotlin.test.expect
+import kotlinx.coroutines.runBlocking
 
-class UTF16CodePointTest {
+import net.pwall.pipeline.TestIntCoAcceptor
 
-    @Test fun `should pass through BMP code point`() = runBlocking {
-        val pipe = CoUTF16_CodePoint(TestIntCoAcceptor())
-        pipe.accept('A'.toInt())
+class UTF8CodePointTest {
+
+    @Test fun `should pass through single char`() = runBlocking {
+        val pipe = CoUTF8_CodePoint(TestIntCoAcceptor())
+        pipe.accept('A'.code)
         assertTrue(pipe.complete)
         val result = pipe.result
         expect(1) { result.size }
-        expect('A'.toInt()) { result[0] }
+        expect('A'.code) { result[0] }
     }
 
-    @Test fun `should convert surrogate pair`() = runBlocking {
-        val pipe = CoUTF16_CodePoint(TestIntCoAcceptor())
-        pipe.accept(0xD83D)
+    @Test fun `should pass through single char plus terminator`() = runBlocking {
+        val pipe = CoUTF8_CodePoint(TestIntCoAcceptor())
+        pipe.accept('A'.code)
+        pipe.accept(-1)
+        assertTrue(pipe.complete)
+        assertTrue(pipe.closed)
+        val result = pipe.result
+        expect(1) { result.size }
+        expect('A'.code) { result[0] }
+    }
+
+    @Test fun `should pass through two byte chars`() = runBlocking {
+        val pipe = CoUTF8_CodePoint(TestIntCoAcceptor())
+        pipe.accept(0xC2)
         assertFalse(pipe.complete)
-        pipe.accept(0xDE02)
+        pipe.accept(0xA9)
+        pipe.accept(0xC3)
+        pipe.accept(0xB7)
+        assertTrue(pipe.complete)
+        val result = pipe.result
+        expect(2) { result.size }
+        expect(0xA9) { result[0] }
+        expect(0xF7) { result[1] }
+    }
+
+    @Test fun `should pass through three byte chars`() = runBlocking {
+        val pipe = CoUTF8_CodePoint(TestIntCoAcceptor())
+        pipe.accept(0xE2)
+        pipe.accept(0x80)
+        pipe.accept(0x94)
         assertTrue(pipe.complete)
         val result = pipe.result
         expect(1) { result.size }
-        expect(0x1F602) { result[0] }
+        expect(0x2014) { result[0] }
     }
 
 }
