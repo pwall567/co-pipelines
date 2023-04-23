@@ -7,25 +7,25 @@ That is, the `accept` and `emit` functions are all suspend functions.
 
 ## Dependency Specification
 
-The latest version of the library is 0.8, and it may be obtained from the Maven Central repository.
+The latest version of the library is 0.9, and it may be obtained from the Maven Central repository.
 
 ### Maven
 ```xml
     <dependency>
       <groupId>net.pwall.util</groupId>
       <artifactId>co-pipelines</artifactId>
-      <version>0.8</version>
+      <version>0.9</version>
     </dependency>
 ```
 ### Gradle
 ```groovy
-    implementation 'net.pwall.util:co-pipelines:0.8'
+    implementation 'net.pwall.util:co-pipelines:0.9'
 ```
 ### Gradle (kts)
 ```kotlin
-    implementation("net.pwall.util:co-pipelines:0.8")
+    implementation("net.pwall.util:co-pipelines:0.9")
 ```
 
 Peter Wall
 
-2023-04-16
+2023-04-23
