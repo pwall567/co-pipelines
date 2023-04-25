@@ -2,6 +2,16 @@
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
+## [1.0.1] - 2023-04-25
+- `pom.xml`: updated version because of Sonatype upload failure
+
+## [1.0] - 2023-04-25
+### Added
+- `CoFunctions`: extension functions for `CoAcceptor` and `IntCoAcceptor`
+### Changed
+- `CoUtility`: renamed from original `CoFunctions`
+- `pom.xml`: promoted to version 1.0
+
 ## [0.9] - 2023-04-23
 ### Changed
 - `pom.xml`: updated dependency version

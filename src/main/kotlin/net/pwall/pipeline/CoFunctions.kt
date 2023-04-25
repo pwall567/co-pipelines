@@ -2,7 +2,7 @@
  * @(#) CoFunctions.kt
  *
  * co-pipelines   Pipeline library for Kotlin coroutines
- * Copyright (c) 2021 Peter Wall
+ * Copyright (c) 2023 Peter Wall
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -25,73 +25,88 @@
 
 package net.pwall.pipeline
 
-class CoCounter<in A>(private var count: Int = 0) : AbstractCoAcceptor<A, Int>() {
+import java.nio.ByteBuffer
+import java.nio.CharBuffer
+import java.util.stream.Stream
 
-    override suspend fun acceptObject(value: A) {
-        count++
-    }
-
-    override val result: Int
-        get() = count
-
+/**
+ * Accept an [Iterator] as sequence of objects.
+ *
+ * @param   iterator    the [Iterator]
+ */
+suspend fun <A, R> CoAcceptor<A, R>.accept(iterator: Iterator<A>) {
+    while (iterator.hasNext())
+        accept(iterator.next())
 }
 
-class CoFilter<in A, out R>(downstream: CoAcceptor<A, R>, private val predicate: (A) -> Boolean) :
-        AbstractCoPipeline<A, A, R>(downstream) {
-
-    override suspend fun acceptObject(value: A) {
-        if (predicate(value))
-            emit(value)
-    }
-
+/**
+ * Accept an [Iterable] (_e.g._ [List]) as sequence of objects.
+ *
+ * @param   iterable    the [Iterable]
+ */
+suspend fun <A, R> CoAcceptor<A, R>.accept(iterable: Iterable<A>) {
+    accept(iterable.iterator())
 }
 
-class CoFold<A>(initialValue: A, private val function: (A, A) -> A) : AbstractCoAcceptor<A, A>() {
-
-    override var result: A = initialValue
-
-    override suspend fun acceptObject(value: A) {
-        result = function(result, value)
-    }
-
+/**
+ * Accept a Java [Stream] as a sequence of objects.
+ *
+ * @param   stream  the [Stream]
+ */
+suspend fun <A, R> CoAcceptor<A, R>.accept(stream: Stream<A>) {
+    accept(stream.iterator())
 }
 
-class ForkCoPipeline<A, out R>(downstream1: CoAcceptor<A, R>, private val downstream2: CoAcceptor<A, R>) :
-        AbstractCoPipeline<A, A, R>(downstream1) {
-
-    override suspend fun acceptObject(value: A) {
-        emit(value)
-        downstream2.accept(value)
-    }
-
+/**
+ * Accept a [CharSequence] (_e.g._ [String]) as a sequence of integer values.
+ *
+ * @param   charSequence    the [CharSequence]
+ */
+suspend fun <R> IntCoAcceptor<R>.accept(charSequence: CharSequence) {
+    for (character in charSequence)
+        accept(character.code)
 }
 
-class IntCoCounter(private var count: Int = 0) : AbstractIntCoAcceptor<Int>() {
-
-    override suspend fun acceptInt(value: Int) {
-        count++
-    }
-
-    override val result: Int
-        get() = count
-
+/**
+ * Accept a [CharArray] as a sequence of integer values.
+ *
+ * @param   chars   the [CharArray]
+ * @param   offset  the starting offset into the array
+ * @param   length  the length to accept
+ */
+suspend fun <R> IntCoAcceptor<R>.accept(chars: CharArray, offset: Int = 0, length: Int = chars.size - offset) {
+    for (i in offset until offset + length)
+        accept(chars[i].code)
 }
 
-class IntCoFilter<out R>(downstream: IntCoAcceptor<R>, private val predicate: (Int) -> Boolean) :
-        AbstractIntCoPipeline<R>(downstream) {
-
-    override suspend fun acceptInt(value: Int) {
-        if (predicate(value))
-            emit(value)
-    }
-
+/**
+ * Accept a [ByteArray] as a sequence of integer values.
+ *
+ * @param   bytes   the [ByteArray]
+ * @param   offset  the starting offset into the array
+ * @param   length  the length to accept
+ */
+suspend fun <R> IntCoAcceptor<R>.accept(bytes: ByteArray, offset: Int = 0, length: Int = bytes.size - offset) {
+    for (i in offset until offset + length)
+        accept(bytes[i].toInt() and 0xFF)
 }
 
-class CoMapper<in A, E, out R>(downstream: CoAcceptor<E, R>, val function: (A) -> E) :
-        AbstractCoPipeline<A, E, R>(downstream) {
+/**
+ * Accept a [CharBuffer] as a sequence of integer values.
+ *
+ * @param   charBuffer  the [CharBuffer]
+ */
+suspend fun <R> IntCoAcceptor<R>.accept(charBuffer: CharBuffer) {
+    while (charBuffer.hasRemaining())
+        accept(charBuffer.get().code)
+}
 
-    override suspend fun acceptObject(value: A) {
-        emit(function(value))
-    }
-
+/**
+ * Accept a [ByteArray] as a sequence of integer values.
+ *
+ * @param   byteBuffer  the [ByteBuffer]
+ */
+suspend fun <R> IntCoAcceptor<R>.accept(byteBuffer: ByteBuffer) {
+    while (byteBuffer.hasRemaining())
+        accept(byteBuffer.get().toInt() and 0xFF)
 }

@@ -31,6 +31,7 @@ import kotlin.test.expect
 import kotlinx.coroutines.runBlocking
 
 import net.pwall.pipeline.TestIntCoAcceptor
+import net.pwall.pipeline.accept
 
 class CodePointUTF8Test {
 

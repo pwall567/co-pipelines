@@ -41,7 +41,7 @@ interface BaseCoAcceptor<out R> {
 
     /** the result of the acceptor */
     val result: R
-        get() = throw UnsupportedOperationException("No result possible")
+        get() = throw UnsupportedOperationException("No result defined")
 
     /**
      * Flush the acceptor (required by some implementations - default is a no-operation).
@@ -86,28 +86,6 @@ interface IntCoAcceptor<out R> : BaseCoAcceptor<R> {
      * @param   value   the value to be processed
      */
     suspend fun accept(value: Int)
-
-    /**
-     * Accept a [CharSequence] (e.g. [String]) as a sequence of integer values.
-     *
-     * @param   charSequence    the [CharSequence]
-     */
-    suspend fun accept(charSequence: CharSequence) {
-        for (character in charSequence)
-            accept(character.code)
-    }
-
-    /**
-     * Accept a [ByteArray] as a sequence of integer values.
-     *
-     * @param   bytes   the [ByteArray]
-     * @param   offset  the starting offset into the array
-     * @param   length  the length to accept
-     */
-    suspend fun accept(bytes: ByteArray, offset: Int = 0, length: Int = bytes.size - offset) {
-        for (i in offset until offset + length)
-            accept(bytes[i].toInt())
-    }
 
 }
 
