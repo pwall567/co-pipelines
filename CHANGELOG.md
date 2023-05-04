@@ -2,7 +2,12 @@
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
+## [1.1] - 2023-05-04
+### Added
+- `CoDecoderBase`, `CoEncoderBase`, `HTMLCoDecoder`, `HTMLCoEncoder`, `XMLCoDecoder`, `XMLCoEncoder`
+
 ## [1.0.1] - 2023-04-25
+### Changed
 - `pom.xml`: updated version because of Sonatype upload failure
 
 ## [1.0] - 2023-04-25
