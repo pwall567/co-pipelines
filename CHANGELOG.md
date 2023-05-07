@@ -2,6 +2,11 @@
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
+## [1.2] - 2023-05-07
+### Changed
+- `XMLCoDecoder`: fixed issue from conversion
+- `pom.xml`: updated dependency version
+
 ## [1.1] - 2023-05-04
 ### Added
 - `CoDecoderBase`, `CoEncoderBase`, `HTMLCoDecoder`, `HTMLCoEncoder`, `XMLCoDecoder`, `XMLCoEncoder`
