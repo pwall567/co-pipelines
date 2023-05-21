@@ -56,7 +56,7 @@ class CoFold<A>(initialValue: A, private val function: (A, A) -> A) : AbstractCo
 
 }
 
-class ForkCoPipeline<A, out R>(downstream1: CoAcceptor<A, R>, private val downstream2: CoAcceptor<A, R>) :
+class ForkCoPipeline<in A, out R>(downstream1: CoAcceptor<A, R>, private val downstream2: CoAcceptor<A, R>) :
         AbstractCoPipeline<A, A, R>(downstream1) {
 
     override suspend fun acceptObject(value: A) {

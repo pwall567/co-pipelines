@@ -1,8 +1,8 @@
 /*
- * @(#) ChannelCoAcceptor.kt
+ * @(#) SchemaURICoEncoderTest.kt
  *
  * co-pipelines   Pipeline library for Kotlin coroutines
- * Copyright (c) 2021 Peter Wall
+ * Copyright (c) 2023 Peter Wall
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,35 +23,33 @@
  * SOFTWARE.
  */
 
-package net.pwall.pipeline
+package net.pwall.pipeline.uri
 
-import kotlinx.coroutines.channels.SendChannel
+import kotlin.test.Test
+import kotlin.test.expect
+import kotlinx.coroutines.runBlocking
 
-/**
- * An implementation of [CoAcceptor] that sends the value to a [SendChannel].
- *
- * @author  Peter Wall
- */
-class ChannelCoAcceptor<in A>(private val channel: SendChannel<A>) : AbstractCoAcceptor<A, Unit>() {
+import net.pwall.pipeline.StringCoAcceptor
+import net.pwall.pipeline.accept
 
-    /**
-     * Accept a value, after `closed` check and test for end of data.  Send the value to the [SendChannel].
-     *
-     * @param   value       the input value
-     */
-    override suspend fun acceptObject(value: A) {
-        channel.send(value)
+class SchemaURICoEncoderTest {
+
+    @Test fun `should encode schema fragment with dollar sign unmodified`() = runBlocking {
+        SchemaURICoEncoder(StringCoAcceptor()).let {
+            it.accept("\$ref")
+            expect("\$ref") { it.result }
+        }
     }
 
-    /**
-     * Close the acceptor.
-     */
-    override suspend fun close() {
-        super.close()
-        channel.close()
+    @Test fun `should encode reserved characters`() = runBlocking {
+        SchemaURICoEncoder(StringCoAcceptor()).let {
+            it.accept("Hello, World!")
+            expect("Hello%2C%20World%21") { it.result }
+        }
+        SchemaURICoEncoder(StringCoAcceptor()).let {
+            it.accept("a more-complicated string: a/b+c%e.(???)")
+            expect("a%20more-complicated%20string%3A%20a%2Fb%2Bc%25e.%28%3F%3F%3F%29") { it.result }
+        }
     }
-
-    override val result: Unit
-        get() = throw UnsupportedOperationException()
 
 }

@@ -2,6 +2,12 @@
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
+## [2.0] - 2023-05-19
+### Changed
+- `codec` classes: added error handling using `ErrorStrategy`
+- `codec` classes: renamed classes to reflect the fact that encoding and decoding primarily uses UTF-16
+  (breaking change)
+
 ## [1.2] - 2023-05-07
 ### Changed
 - `XMLCoDecoder`: fixed issue from conversion

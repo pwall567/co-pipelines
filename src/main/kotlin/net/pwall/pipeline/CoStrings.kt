@@ -69,6 +69,38 @@ class StringCoAcceptor(private val initialSize: Int = 2048) : AbstractIntCoAccep
 
 }
 
+class ByteArrayCoAcceptor(private val initialSize: Int = 20) : AbstractIntCoAcceptor<ByteArray>() {
+
+    init {
+        require(initialSize in 8..65536) { "Size out of range (8..65536) - $initialSize" }
+    }
+
+    private var byteArray = ByteArray(initialSize)
+    private var index = 0
+
+    val size: Int
+        get() = index
+
+    override suspend fun acceptInt(value: Int) {
+        if (index == byteArray.size) {
+            val newArray = ByteArray(index.let { if (it < 65536) it * 2 else it + 65536 }) {
+                if (it < index) byteArray[it] else 0
+            }
+            byteArray = newArray
+        }
+        byteArray[index++] = value.toByte()
+    }
+
+    override val result: ByteArray
+        get() = ByteArray(index) { byteArray[it] }
+
+    fun reset() {
+        byteArray = ByteArray(initialSize)
+        index = 0
+    }
+
+}
+
 /**
  * Output a character.
  */

@@ -34,7 +34,7 @@ import net.pwall.pipeline.IntCoAcceptor
  * @author  Peter Wall
  * @param   R       the pipeline result type
  */
-open class CoDecoderBase<R>(private val table: Array<MappingEntry>, downstream: IntCoAcceptor<R>) :
+open class CoDecoderBase<out R>(private val table: Array<MappingEntry>, downstream: IntCoAcceptor<R>) :
         AbstractIntCoPipeline<R>(downstream) {
 
     enum class State { NORMAL, AMPERSAND, CHARS, HASH, DIGITS, HEX }

@@ -26,6 +26,7 @@
 package net.pwall.pipeline.codec
 
 import kotlin.test.Test
+import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 import kotlin.test.expect
 import kotlinx.coroutines.runBlocking
@@ -77,6 +78,39 @@ class CodePointUTF8Test {
         expect(0xE2) { result[0] }
         expect(0x80) { result[1] }
         expect(0x94) { result[2] }
+    }
+
+    @Test fun `should throw exception on invalid code point`() = runBlocking {
+        val pipe = CoCodePoint_UTF8(TestIntCoAcceptor())
+        assertFailsWith<EncoderException> { pipe.accept(0x110000) }.let {
+            expect("Illegal value 0x110000") { it.message }
+            expect(0x110000) { it.errorValue }
+        }
+    }
+
+    @Test fun `should ignore invalid code point when selected`() = runBlocking {
+        val pipe = CoCodePoint_UTF8(TestIntCoAcceptor(), ErrorStrategy.IGNORE)
+        pipe.accept('A'.code)
+        pipe.accept(0x110000)
+        pipe.accept('B'.code)
+        assertTrue(pipe.complete)
+        val result = pipe.result
+        expect(2) { result.size }
+        expect('A'.code) { result[0] }
+        expect('B'.code) { result[1] }
+    }
+
+    @Test fun `should substitute for invalid code point when selected`() = runBlocking {
+        val pipe = CoCodePoint_UTF8(TestIntCoAcceptor(), ErrorStrategy.Substitute())
+        pipe.accept('A'.code)
+        pipe.accept(0x110000)
+        pipe.accept('B'.code)
+        assertTrue(pipe.complete)
+        val result = pipe.result
+        expect(3) { result.size }
+        expect('A'.code) { result[0] }
+        expect(0xBF) { result[1] }
+        expect('B'.code) { result[2] }
     }
 
 }

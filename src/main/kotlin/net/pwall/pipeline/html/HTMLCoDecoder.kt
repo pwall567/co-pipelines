@@ -34,4 +34,4 @@ import net.pwall.pipeline.xxml.CoDecoderBase
  * @author  Peter Wall
  * @param   R       the pipeline result type
  */
-class HTMLCoDecoder<R>(downstream: IntCoAcceptor<R>) : CoDecoderBase<R>(HTMLDecoder.reverseTable, downstream)
+class HTMLCoDecoder<out R>(downstream: IntCoAcceptor<R>) : CoDecoderBase<R>(HTMLDecoder.reverseTable, downstream)

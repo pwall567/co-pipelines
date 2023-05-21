@@ -31,10 +31,10 @@ import kotlin.test.expect
 import kotlinx.coroutines.runBlocking
 import net.pwall.pipeline.TestIntCoAcceptor
 
-class Windows1252CodePointTest {
+class Windows1252UTF16Test {
 
     @Test fun `should pass through single char`() = runBlocking {
-        val pipe = CoWindows1252_CodePoint(TestIntCoAcceptor())
+        val pipe = CoWindows1252_UTF16(TestIntCoAcceptor())
         pipe.accept('A'.code)
         assertTrue(pipe.complete)
         val result = pipe.result
@@ -43,7 +43,7 @@ class Windows1252CodePointTest {
     }
 
     @Test fun `should pass through single char plus terminator`() = runBlocking {
-        val pipe = CoWindows1252_CodePoint(TestIntCoAcceptor())
+        val pipe = CoWindows1252_UTF16(TestIntCoAcceptor())
         pipe.accept('A'.code)
         pipe.accept(-1)
         assertTrue(pipe.complete)
@@ -54,7 +54,7 @@ class Windows1252CodePointTest {
     }
 
     @Test fun `should pass through special chars`() = runBlocking {
-        val pipe = CoWindows1252_CodePoint(TestIntCoAcceptor())
+        val pipe = CoWindows1252_UTF16(TestIntCoAcceptor())
         pipe.accept(0x80)
         pipe.accept(0x82)
         pipe.accept(0x83)

@@ -34,7 +34,7 @@ import net.pwall.pipeline.codec.CoEncoderBase
  * @author  Peter Wall
  * @param   R       the pipeline result type
  */
-class XMLCoEncoder<R>(downstream: IntCoAcceptor<R>) : CoEncoderBase<R>(downstream) {
+class XMLCoEncoder<out R>(downstream: IntCoAcceptor<R>) : CoEncoderBase<R>(downstream) {
 
     override suspend fun acceptInt(value: Int) {
         when (value.toChar()) {

@@ -35,7 +35,7 @@ import net.pwall.util.CoIntOutput
  * @author  Peter Wall
  * @param   R       the pipeline result type
  */
-abstract class CoEncoderBase<R>(downstream: IntCoAcceptor<R>) : AbstractIntCoPipeline<R>(downstream) {
+abstract class CoEncoderBase<out R>(downstream: IntCoAcceptor<R>) : AbstractIntCoPipeline<R>(downstream) {
 
     suspend fun emit(ch: Char) {
         emit(ch.code)

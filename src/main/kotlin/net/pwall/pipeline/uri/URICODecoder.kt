@@ -1,5 +1,5 @@
 /*
- * @(#) CoURI.kt
+ * @(#) URICODecoder.kt
  *
  * co-pipelines   Pipeline library for Kotlin coroutines
  * Copyright (c) 2021, 2023 Peter Wall
@@ -25,11 +25,20 @@
 
 package net.pwall.pipeline.uri
 
-import net.pwall.pipeline.AbstractIntCoPipeline
 import net.pwall.pipeline.IntCoAcceptor
-import net.pwall.util.CoIntOutput.coOutput2Hex
+import net.pwall.pipeline.codec.CoErrorStrategyBase
+import net.pwall.pipeline.codec.ErrorStrategy
 
-class URIDecoder(downstream: IntCoAcceptor<String>) : AbstractIntCoPipeline<String>(downstream) {
+/**
+ * URI decoder - decode text using URI percent-encoding.
+ *
+ * @author  Peter Wall
+ * @param   R       the pipeline result type
+ */
+class URICODecoder<out R>(
+    downstream: IntCoAcceptor<R>,
+    errorStrategy: ErrorStrategy = ErrorStrategy.DEFAULT,
+) : CoErrorStrategyBase<R>(downstream, errorStrategy) {
 
     enum class State { NORMAL, FIRST, SECOND }
 
@@ -39,11 +48,14 @@ class URIDecoder(downstream: IntCoAcceptor<String>) : AbstractIntCoPipeline<Stri
     override suspend fun acceptInt(value: Int) {
         when (state) {
             State.NORMAL -> {
-                if (value == '%'.code) {
-                    char = 0
-                    state = State.FIRST
-                } else
-                    emit(value)
+                when (value.toChar()) {
+                    '%' -> {
+                        char = 0
+                        state = State.FIRST
+                    }
+                    '+' -> emit(' '.code)
+                    else -> emit(value)
+                }
             }
             State.FIRST -> {
                 char = fromHex(value.toChar()) shl 4
@@ -60,33 +72,16 @@ class URIDecoder(downstream: IntCoAcceptor<String>) : AbstractIntCoPipeline<Stri
     override val stageComplete: Boolean
         get() = state == State.NORMAL
 
-    private fun fromHex(ch: Char): Int {
+    private suspend fun fromHex(ch: Char): Int {
         return when (ch) {
             in '0'..'9' -> ch.code - '0'.code
             in 'A'..'Z' -> ch.code - 'A'.code + 10
             in 'a'..'z' -> ch.code - 'a'.code + 10
-            else -> throw IllegalArgumentException("Illegal hex character - $ch")
+            else -> {
+                handleError(ch.code)
+                0
+            }
         }
-    }
-
-}
-
-class URIEncoder(downstream: IntCoAcceptor<String>) : AbstractIntCoPipeline<String>(downstream) {
-
-    override suspend fun acceptInt(value: Int) {
-        if (!isUnreservedURI(value.toChar())) { // TODO add options to encode space as plus and to allow dollar sign
-            emit('%'.code)
-            coOutput2Hex(value) { emit(it.code) }
-        }
-        else
-            emit(value)
-    }
-
-    companion object {
-
-        private fun isUnreservedURI(ch: Char) =
-            ch in 'A'..'Z' || ch in 'a'..'z' || ch in '0'..'9' || ch == '-' || ch == '.' || ch == '_' || ch == '~'
-
     }
 
 }

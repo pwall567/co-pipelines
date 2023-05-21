@@ -32,13 +32,38 @@ import java.nio.charset.Charset
 import net.pwall.pipeline.AbstractIntCoPipeline
 import net.pwall.pipeline.IntCoAcceptor
 import net.pwall.pipeline.IntCoPipeline
+import net.pwall.pipeline.codec.ErrorStrategy.Substitute
+import net.pwall.pipeline.codec.ErrorStrategy.ThrowException
 
 /**
- * An encoder [IntCoPipeline] to convert Unicode code points to UTF-8.
+ * Base class for encoder and decoder classes to implement the error strategy.
  *
  * @param   R       the pipeline result type
  */
-class CoCodePoint_UTF8<R>(downstream: IntCoAcceptor<R>) : AbstractIntCoPipeline<R>(downstream) {
+abstract class CoErrorStrategyBase<out R>(
+    downstream: IntCoAcceptor<R>,
+    private val errorStrategy: ErrorStrategy,
+) : AbstractIntCoPipeline<R>(downstream) {
+
+    suspend fun handleError(value: Int) {
+        when (errorStrategy) {
+            is ThrowException -> throw EncoderException(value)
+            is Substitute -> emit(errorStrategy.substitute)
+        }
+    }
+
+}
+
+/**
+ * An encoder [IntCoPipeline] to convert Unicode code points to UTF-8.  Note that this encoder will convert surrogate
+ * characters to 3-byte sequences without reporting an error, so it may be used as a UTF-16 to UTF-8 encoder.
+ *
+ * @param   R       the pipeline result type
+ */
+class CoCodePoint_UTF8<out R>(
+    downstream: IntCoAcceptor<R>,
+    errorStrategy: ErrorStrategy = ErrorStrategy.THROW_EXCEPTION,
+) : CoErrorStrategyBase<R>(downstream, errorStrategy) {
 
     override suspend fun acceptInt(value: Int) {
         when {
@@ -58,7 +83,7 @@ class CoCodePoint_UTF8<R>(downstream: IntCoAcceptor<R>) : AbstractIntCoPipeline<
                 emit(0x80 or ((value shr 6) and 0x3F))
                 emit(0x80 or (value and 0x3F))
             }
-            else -> throw IllegalArgumentException("Illegal code point")
+            else -> handleError(value)
         }
     }
 
@@ -69,14 +94,21 @@ class CoCodePoint_UTF8<R>(downstream: IntCoAcceptor<R>) : AbstractIntCoPipeline<
  *
  * @param   R       the pipeline result type
  */
-class CoCodePoint_UTF16<R>(downstream: IntCoAcceptor<R>) : AbstractIntCoPipeline<R>(downstream) {
+class CoCodePoint_UTF16<out R>(
+    downstream: IntCoAcceptor<R>,
+    errorStrategy: ErrorStrategy = ErrorStrategy.THROW_EXCEPTION,
+) : CoErrorStrategyBase<R>(downstream, errorStrategy) {
 
     override suspend fun acceptInt(value: Int) {
-        if (Character.isBmpCodePoint(value))
-            emit(value)
-        else {
-            emit(Character.highSurrogate(value).code)
-            emit(Character.lowSurrogate(value).code)
+        when {
+            value < 0xD800 -> emit(value)
+            value < 0xE000 -> handleError(value)
+            value < 0x10000 -> emit(value)
+            value < 0x110000 -> {
+                emit(Character.highSurrogate(value).code)
+                emit(Character.lowSurrogate(value).code)
+            }
+            else -> handleError(value)
         }
     }
 
@@ -87,7 +119,10 @@ class CoCodePoint_UTF16<R>(downstream: IntCoAcceptor<R>) : AbstractIntCoPipeline
  *
  * @param   R       the pipeline result type
  */
-class CoUTF8_CodePoint<R>(downstream: IntCoAcceptor<R>) : AbstractIntCoPipeline<R>(downstream) {
+class CoUTF8_CodePoint<out R>(
+    downstream: IntCoAcceptor<R>,
+    errorStrategy: ErrorStrategy = ErrorStrategy.THROW_EXCEPTION,
+) : CoErrorStrategyBase<R>(downstream, errorStrategy) {
 
     private val penultimate: suspend (Int) -> Unit = { i -> intermediate(i, terminal) }
 
@@ -95,18 +130,20 @@ class CoUTF8_CodePoint<R>(downstream: IntCoAcceptor<R>) : AbstractIntCoPipeline<
 
     private val normal: suspend (Int) -> Unit = { i ->
         when {
-            i == -1 || (i and 0x80) == 0 -> emit(i)
-            (i and 0x40) == 0 -> throw IllegalArgumentException("Illegal character in UTF-8")
+            (i and 0x80) == 0 -> emit(i)
+            (i and 0x40) == 0 -> handleError(i)
             (i and 0x20) == 0 -> startSequence(i and 0x1F, terminal)
             (i and 0x10) == 0 -> startSequence(i and 0x0F, penultimate)
             (i and 0x08) == 0 -> startSequence(i and 0x07, fourByte2)
-            else -> throw IllegalArgumentException("Illegal character in UTF-8")
+            else -> handleError(i)
         }
     }
 
     private val terminal: suspend (Int) -> Unit = { i ->
-        checkTrailing(i)
-        emit((codePoint shl 6) or (i and 0x3F))
+        if ((i and 0xC0) == 0x80)
+            emit((codePoint shl 6) or (i and 0x3F))
+        else
+            handleError(i)
         state = normal
     }
 
@@ -122,15 +159,83 @@ class CoUTF8_CodePoint<R>(downstream: IntCoAcceptor<R>) : AbstractIntCoPipeline<
         state = nextState
     }
 
-    private fun intermediate(i: Int, nextState: suspend (Int) -> Unit) {
-        checkTrailing(i)
-        codePoint = (codePoint shl 6) or (i and 0x3F)
+    private suspend fun intermediate(i: Int, nextState: suspend (Int) -> Unit) {
+        if ((i and 0xC0) == 0x80) {
+            codePoint = (codePoint shl 6) or (i and 0x3F)
+            state = nextState
+        }
+        else {
+            handleError(i)
+            state = normal
+        }
+    }
+
+    override val complete: Boolean
+        get() = state == normal && super.complete
+
+}
+
+/**
+ * A decoder [IntCoPipeline] to convert UTF-8 to UTF-16.
+ *
+ * @param   R       the pipeline result type
+ */
+class CoUTF8_UTF16<out R>(
+    downstream: IntCoAcceptor<R>,
+    errorStrategy: ErrorStrategy = ErrorStrategy.THROW_EXCEPTION,
+) : CoErrorStrategyBase<R>(downstream, errorStrategy) {
+
+    private val penultimate: suspend (Int) -> Unit = { i -> intermediate(i, terminal) }
+
+    private val fourByte2: suspend (Int) -> Unit = { i -> intermediate(i, penultimate) }
+
+    private val normal: suspend (Int) -> Unit = { i ->
+        when {
+            (i and 0x80) == 0 -> emit(i)
+            (i and 0x40) == 0 -> handleError(i)
+            (i and 0x20) == 0 -> startSequence(i and 0x1F, terminal)
+            (i and 0x10) == 0 -> startSequence(i and 0x0F, penultimate)
+            (i and 0x08) == 0 -> startSequence(i and 0x07, fourByte2)
+            else -> handleError(i)
+        }
+    }
+
+    private val terminal: suspend (Int) -> Unit = { i ->
+        if ((i and 0xC0) == 0x80) {
+            val c = (codePoint shl 6) or (i and 0x3F)
+            if (c < 0x10000)
+                emit(c)
+            else {
+                emit(Character.highSurrogate(c).code)
+                emit(Character.lowSurrogate(c).code)
+            }
+        }
+        else
+            handleError(i)
+        state = normal
+    }
+
+    private var state = normal
+    private var codePoint = 0
+
+    override suspend fun acceptInt(value: Int) {
+        state(value)
+    }
+
+    private fun startSequence(i: Int, nextState: suspend (Int) -> Unit) {
+        codePoint = i
         state = nextState
     }
 
-    private fun checkTrailing(i: Int) {
-        if ((i and 0xC0) != 0x80)
-            throw IllegalArgumentException("Illegal character in UTF-8")
+    private suspend fun intermediate(i: Int, nextState: suspend (Int) -> Unit) {
+        if ((i and 0xC0) == 0x80) {
+            codePoint = (codePoint shl 6) or (i and 0x3F)
+            state = nextState
+        }
+        else {
+            handleError(i)
+            state = normal
+        }
     }
 
     override val complete: Boolean
@@ -143,7 +248,10 @@ class CoUTF8_CodePoint<R>(downstream: IntCoAcceptor<R>) : AbstractIntCoPipeline<
  *
  * @param   R       the pipeline result type
  */
-class CoUTF16_CodePoint<R>(downstream: IntCoAcceptor<R>) : AbstractIntCoPipeline<R>(downstream) {
+class CoUTF16_CodePoint<out R>(
+    downstream: IntCoAcceptor<R>,
+    errorStrategy: ErrorStrategy = ErrorStrategy.THROW_EXCEPTION,
+) : CoErrorStrategyBase<R>(downstream, errorStrategy) {
 
     private val normal: suspend (Int) -> Unit = { i ->
         if (Character.isHighSurrogate(i.toChar())) {
@@ -155,8 +263,10 @@ class CoUTF16_CodePoint<R>(downstream: IntCoAcceptor<R>) : AbstractIntCoPipeline
     }
 
     private val terminal: suspend (Int) -> Unit = { i ->
-        require(Character.isLowSurrogate(i.toChar())) { "Illegal character in surrogate sequence" }
-        emit(Character.toCodePoint(highSurrogate.toChar(), i.toChar()))
+        if (Character.isLowSurrogate(i.toChar()))
+            emit(Character.toCodePoint(highSurrogate.toChar(), i.toChar()))
+        else
+            handleError(highSurrogate)
         state = normal
     }
 
@@ -177,14 +287,17 @@ class CoUTF16_CodePoint<R>(downstream: IntCoAcceptor<R>) : AbstractIntCoPipeline
  *
  * @param   R       the pipeline result type
  */
-open class DecodingCoPipeline<R>(downstream: IntCoAcceptor<R>, private val table: String) :
-        AbstractIntCoPipeline<R>(downstream) {
+open class DecodingCoPipeline<out R>(
+    downstream: IntCoAcceptor<R>,
+    private val table: String,
+    errorStrategy: ErrorStrategy = ErrorStrategy.THROW_EXCEPTION,
+) : CoErrorStrategyBase<R>(downstream, errorStrategy) {
 
     override suspend fun acceptInt(value: Int) {
         when (value) {
             in 0..0x7F -> emit(value)
             in 0x80..0xFF -> emit(table[value - 0x80].code)
-            else -> throw IllegalArgumentException("Illegal character")
+            else -> handleError(value)
         }
     }
 
@@ -195,8 +308,11 @@ open class DecodingCoPipeline<R>(downstream: IntCoAcceptor<R>, private val table
  *
  * @param   R       the pipeline result type
  */
-open class EncodingCoPipeline<R>(downstream: IntCoAcceptor<R>, private val reverseTable: IntArray) :
-        AbstractIntCoPipeline<R>(downstream) {
+open class EncodingCoPipeline<out R>(
+    downstream: IntCoAcceptor<R>,
+    private val reverseTable: IntArray,
+    errorStrategy: ErrorStrategy = ErrorStrategy.THROW_EXCEPTION,
+) : CoErrorStrategyBase<R>(downstream, errorStrategy) {
 
     override suspend fun acceptInt(value: Int) {
         if (value in 0..0x7F)
@@ -216,13 +332,16 @@ open class EncodingCoPipeline<R>(downstream: IntCoAcceptor<R>, private val rever
                     }
                 }
             }
-            throw IllegalArgumentException("Illegal character")
+            handleError(value)
         }
     }
 
 }
 
-class CoWindows1252_CodePoint<R>(downstream: IntCoAcceptor<R>) : DecodingCoPipeline<R>(downstream, table) {
+class CoWindows1252_UTF16<out R>(
+    downstream: IntCoAcceptor<R>,
+    errorStrategy: ErrorStrategy = ErrorStrategy.THROW_EXCEPTION,
+) : DecodingCoPipeline<R>(downstream, table, errorStrategy) {
 
     companion object {
         const val table =
@@ -241,10 +360,15 @@ class CoWindows1252_CodePoint<R>(downstream: IntCoAcceptor<R>) : DecodingCoPipel
 
 }
 
-class CoCodepoint_Windows1252<R>(downstream: IntCoAcceptor<R>) :
-        EncodingCoPipeline<R>(downstream, CoWindows1252_CodePoint.reverseTable)
+class CoUTF16_Windows1252<out R>(
+    downstream: IntCoAcceptor<R>,
+    errorStrategy: ErrorStrategy = ErrorStrategy.THROW_EXCEPTION,
+) : EncodingCoPipeline<R>(downstream, CoWindows1252_UTF16.reverseTable, errorStrategy)
 
-class CoISO8859_1_CodePoint<R>(downstream: IntCoAcceptor<R>) : DecodingCoPipeline<R>(downstream, table) {
+class CoISO8859_1_UTF16<out R>(
+    downstream: IntCoAcceptor<R>,
+    errorStrategy: ErrorStrategy = ErrorStrategy.THROW_EXCEPTION,
+) : DecodingCoPipeline<R>(downstream, table, errorStrategy) {
 
     companion object {
         const val table =
@@ -263,10 +387,15 @@ class CoISO8859_1_CodePoint<R>(downstream: IntCoAcceptor<R>) : DecodingCoPipelin
 
 }
 
-class CoCodepoint_ISO8859_1<R>(downstream: IntCoAcceptor<R>) :
-        EncodingCoPipeline<R>(downstream, CoISO8859_1_CodePoint.reverseTable)
+class CoUTF16_ISO8859_1<out R>(
+    downstream: IntCoAcceptor<R>,
+    errorStrategy: ErrorStrategy = ErrorStrategy.THROW_EXCEPTION,
+) : EncodingCoPipeline<R>(downstream, CoISO8859_1_UTF16.reverseTable, errorStrategy)
 
-class CoISO8859_15_CodePoint<R>(downstream: IntCoAcceptor<R>) : DecodingCoPipeline<R>(downstream, table) {
+class CoISO8859_15_UTF16<out R>(
+    downstream: IntCoAcceptor<R>,
+    errorStrategy: ErrorStrategy = ErrorStrategy.THROW_EXCEPTION,
+) : DecodingCoPipeline<R>(downstream, table, errorStrategy) {
 
     companion object {
         const val table =
@@ -285,30 +414,45 @@ class CoISO8859_15_CodePoint<R>(downstream: IntCoAcceptor<R>) : DecodingCoPipeli
 
 }
 
-class CoCodepoint_ISO8859_15<R>(downstream: IntCoAcceptor<R>) :
-        EncodingCoPipeline<R>(downstream, CoISO8859_15_CodePoint.reverseTable)
+class CoUTF16_ISO8859_15<out R>(
+    downstream: IntCoAcceptor<R>,
+    errorStrategy: ErrorStrategy = ErrorStrategy.THROW_EXCEPTION,
+) : EncodingCoPipeline<R>(downstream, CoISO8859_15_UTF16.reverseTable, errorStrategy)
 
-class CoASCII_CodePoint<R>(downstream: IntCoAcceptor<R>) : AbstractIntCoPipeline<R>(downstream) {
+class CoASCII_UTF16<out R>(
+    downstream: IntCoAcceptor<R>,
+    errorStrategy: ErrorStrategy = ErrorStrategy.THROW_EXCEPTION,
+) : CoErrorStrategyBase<R>(downstream, errorStrategy) {
 
     override suspend fun acceptInt(value: Int) {
-        require(value in 0..0x7F) { "Illegal character" }
-        emit(value);
+        if (value in 0..0x7F)
+            emit(value)
+        else
+            handleError(value)
     }
 
 }
 
-class CoCodePoint_ASCII<R>(downstream: IntCoAcceptor<R>) : AbstractIntCoPipeline<R>(downstream) {
+class CoUTF16_ASCII<out R>(
+    downstream: IntCoAcceptor<R>,
+    errorStrategy: ErrorStrategy = ErrorStrategy.THROW_EXCEPTION,
+) : CoErrorStrategyBase<R>(downstream, errorStrategy) {
 
     override suspend fun acceptInt(value: Int) {
-        require(value in 0..0x7F) { "Illegal character" }
-        emit(value);
+        if (value in 0..0x7F)
+            emit(value)
+        else
+            handleError(value)
     }
 
 }
 
-class SwitchableDecoder<R>(downstream: IntCoAcceptor<R>) : AbstractIntCoPipeline<R>(downstream) {
+class SwitchableCoDecoder<R>(
+    downstream: IntCoAcceptor<R>,
+    errorStrategy: ErrorStrategy = ErrorStrategy.THROW_EXCEPTION,
+) : CoErrorStrategyBase<R>(downstream, errorStrategy) {
 
-    private var delegate: IntCoAcceptor<R> = CoASCII_CodePoint<R>(downstream)
+    private var delegate: IntCoAcceptor<R> = CoASCII_UTF16(downstream)
 
     override suspend fun acceptInt(value: Int) {
         delegate.accept(value)
@@ -330,29 +474,56 @@ class SwitchableDecoder<R>(downstream: IntCoAcceptor<R>) : AbstractIntCoPipeline
 
 object CoDecoderFactory {
 
-    fun <R> getDecoder(charsetName: String, downstream: IntCoAcceptor<R>): IntCoPipeline<R> = when (charsetName) {
-            "windows-1252" -> CoWindows1252_CodePoint(downstream)
-            "ISO-8859-1" -> CoISO8859_1_CodePoint(downstream)
-            "ISO-8859-15" -> CoISO8859_15_CodePoint(downstream)
-            "US-ASCII" -> CoASCII_CodePoint(downstream)
-            else -> CoUTF8_CodePoint(downstream)
+    /**
+     * Get a decoder pipeline for the given character set name.
+     */
+    fun <R> getDecoder(
+        charsetName: String,
+        downstream: IntCoAcceptor<R>,
+        errorStrategy: ErrorStrategy = ErrorStrategy.THROW_EXCEPTION,
+    ): IntCoPipeline<R> = when (charsetName) {
+            "windows-1252" -> CoWindows1252_UTF16(downstream, errorStrategy)
+            "ISO-8859-1" -> CoISO8859_1_UTF16(downstream, errorStrategy)
+            "ISO-8859-15" -> CoISO8859_15_UTF16(downstream, errorStrategy)
+            "US-ASCII" -> CoASCII_UTF16(downstream, errorStrategy)
+            else -> CoUTF8_UTF16(downstream, errorStrategy)
         }
 
-    fun <R> getDecoder(charset: Charset, downstream: IntCoAcceptor<R>) = getDecoder(charset.name(), downstream)
+    /**
+     * Get a decoder pipeline for the given character set.
+     */
+    fun <R> getDecoder(
+        charset: Charset,
+        downstream: IntCoAcceptor<R>,
+        errorStrategy: ErrorStrategy = ErrorStrategy.THROW_EXCEPTION,
+    ) = getDecoder(charset.name(), downstream, errorStrategy)
 
 }
 
 object CoEncoderFactory {
 
-    fun <R> getEncoder(charsetName: String, downstream: IntCoAcceptor<R>): IntCoPipeline<R> = when (charsetName) {
-            "windows-1252" -> CoCodepoint_Windows1252(downstream)
-            "ISO-8859-1" -> CoCodepoint_ISO8859_1(downstream)
-            "ISO-8859-15" -> CoCodepoint_ISO8859_15(downstream)
-            "US-ASCII" -> CoCodePoint_ASCII(downstream)
-            "UTF-16" -> CoCodePoint_UTF16(downstream)
-            else -> CoCodePoint_UTF8(downstream)
+    /**
+     * Get an encoder pipeline for the given character set name.
+     */
+    fun <R> getEncoder(
+        charsetName: String,
+        downstream: IntCoAcceptor<R>,
+        errorStrategy: ErrorStrategy = ErrorStrategy.THROW_EXCEPTION,
+    ): IntCoPipeline<R> = when (charsetName) {
+            "windows-1252" -> CoUTF16_Windows1252(downstream, errorStrategy)
+            "ISO-8859-1" -> CoUTF16_ISO8859_1(downstream, errorStrategy)
+            "ISO-8859-15" -> CoUTF16_ISO8859_15(downstream, errorStrategy)
+            "US-ASCII" -> CoUTF16_ASCII(downstream, errorStrategy)
+            else -> CoCodePoint_UTF8(downstream, errorStrategy)
         }
 
-    fun <R> getEncoder(charset: Charset, downstream: IntCoAcceptor<R>) = getEncoder(charset.name(), downstream)
+    /**
+     * Get an encoder pipeline for the given character set.
+     */
+    fun <R> getEncoder(
+        charset: Charset,
+        downstream: IntCoAcceptor<R>,
+        errorStrategy: ErrorStrategy = ErrorStrategy.THROW_EXCEPTION,
+    ) = getEncoder(charset.name(), downstream, errorStrategy)
 
 }

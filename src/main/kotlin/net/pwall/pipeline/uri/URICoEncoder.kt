@@ -1,8 +1,8 @@
 /*
- * @(#) ChannelCoAcceptor.kt
+ * @(#) URICoEncoder.kt
  *
  * co-pipelines   Pipeline library for Kotlin coroutines
- * Copyright (c) 2021 Peter Wall
+ * Copyright (c) 2021, 2023 Peter Wall
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,35 +23,33 @@
  * SOFTWARE.
  */
 
-package net.pwall.pipeline
+package net.pwall.pipeline.uri
 
-import kotlinx.coroutines.channels.SendChannel
+import net.pwall.pipeline.AbstractIntCoPipeline
+import net.pwall.pipeline.IntCoAcceptor
+import net.pwall.pipeline.uri.URIEncoder.isUnreservedURI
+import net.pwall.util.CoIntOutput.coOutput2Hex
 
 /**
- * An implementation of [CoAcceptor] that sends the value to a [SendChannel].
+ * URI encoder - encode text using URI percent-encoding.
  *
  * @author  Peter Wall
+ * @param   R       the pipeline result type
  */
-class ChannelCoAcceptor<in A>(private val channel: SendChannel<A>) : AbstractCoAcceptor<A, Unit>() {
+class URICoEncoder<out R>(
+    downstream: IntCoAcceptor<R>,
+    private val encodeSpaceAsPlus: Boolean = false,
+) : AbstractIntCoPipeline<R>(downstream) {
 
-    /**
-     * Accept a value, after `closed` check and test for end of data.  Send the value to the [SendChannel].
-     *
-     * @param   value       the input value
-     */
-    override suspend fun acceptObject(value: A) {
-        channel.send(value)
+    override suspend fun acceptInt(value: Int) {
+        when {
+            value == ' '.code && encodeSpaceAsPlus -> emit('+'.code)
+            !isUnreservedURI(value) -> {
+                emit('%'.code)
+                coOutput2Hex(value) { emit(it.code) }
+            }
+            else -> emit(value)
+        }
     }
-
-    /**
-     * Close the acceptor.
-     */
-    override suspend fun close() {
-        super.close()
-        channel.close()
-    }
-
-    override val result: Unit
-        get() = throw UnsupportedOperationException()
 
 }

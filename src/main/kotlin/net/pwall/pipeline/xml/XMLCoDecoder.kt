@@ -9,4 +9,4 @@ import net.pwall.pipeline.xxml.CoDecoderBase
  * @author  Peter Wall
  * @param   R       the pipeline result type
  */
-class XMLCoDecoder<R>(downstream: IntCoAcceptor<R>) : CoDecoderBase<R>(XMLDecoder.table, downstream)
+class XMLCoDecoder<out R>(downstream: IntCoAcceptor<R>) : CoDecoderBase<R>(XMLDecoder.table, downstream)

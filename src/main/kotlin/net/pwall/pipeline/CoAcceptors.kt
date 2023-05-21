@@ -197,7 +197,7 @@ class ListCoAcceptor<A>(initialCapacity: Int = defaultInitialCapacity) : Abstrac
 /**
  * A simple implementation of [CoAcceptor] that takes a lambda as the accepting function.
  */
-class SimpleCoAcceptor<A>(val block: suspend (A) -> Unit) : AbstractCoAcceptor<A, Unit>() {
+class SimpleCoAcceptor<in A>(val block: suspend (A) -> Unit) : AbstractCoAcceptor<A, Unit>() {
 
     /**
      * Accept a value, after `closed` check and test for end of data.  Invoke the lambda with the value.

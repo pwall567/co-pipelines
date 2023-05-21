@@ -36,7 +36,7 @@ import net.pwall.pipeline.html.HTMLEncoder.mappedEntities
  * @author  Peter Wall
  * @param   R       the pipeline result type
  */
-class HTMLCoEncoder<R>(downstream: IntCoAcceptor<R>) : CoEncoderBase<R>(downstream) {
+class HTMLCoEncoder<out R>(downstream: IntCoAcceptor<R>) : CoEncoderBase<R>(downstream) {
 
     override suspend fun acceptInt(value: Int) {
         when (value.toChar()) {
