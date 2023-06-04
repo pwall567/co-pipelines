@@ -481,13 +481,13 @@ object CoDecoderFactory {
         charsetName: String,
         downstream: IntCoAcceptor<R>,
         errorStrategy: ErrorStrategy = ErrorStrategy.THROW_EXCEPTION,
-    ): IntCoPipeline<R> = when (charsetName) {
-            "windows-1252" -> CoWindows1252_UTF16(downstream, errorStrategy)
-            "ISO-8859-1" -> CoISO8859_1_UTF16(downstream, errorStrategy)
-            "ISO-8859-15" -> CoISO8859_15_UTF16(downstream, errorStrategy)
-            "US-ASCII" -> CoASCII_UTF16(downstream, errorStrategy)
-            else -> CoUTF8_UTF16(downstream, errorStrategy)
-        }
+    ): IntCoPipeline<R> = when {
+        charsetName.equals("windows-1252", ignoreCase = true) -> CoWindows1252_UTF16(downstream, errorStrategy)
+        charsetName.equals("ISO-8859-1", ignoreCase = true) -> CoISO8859_1_UTF16(downstream, errorStrategy)
+        charsetName.equals("ISO-8859-15", ignoreCase = true) -> CoISO8859_15_UTF16(downstream, errorStrategy)
+        charsetName.equals("US-ASCII" , ignoreCase = true) -> CoASCII_UTF16(downstream, errorStrategy)
+        else -> CoUTF8_UTF16(downstream, errorStrategy)
+    }
 
     /**
      * Get a decoder pipeline for the given character set.
@@ -509,13 +509,13 @@ object CoEncoderFactory {
         charsetName: String,
         downstream: IntCoAcceptor<R>,
         errorStrategy: ErrorStrategy = ErrorStrategy.THROW_EXCEPTION,
-    ): IntCoPipeline<R> = when (charsetName) {
-            "windows-1252" -> CoUTF16_Windows1252(downstream, errorStrategy)
-            "ISO-8859-1" -> CoUTF16_ISO8859_1(downstream, errorStrategy)
-            "ISO-8859-15" -> CoUTF16_ISO8859_15(downstream, errorStrategy)
-            "US-ASCII" -> CoUTF16_ASCII(downstream, errorStrategy)
-            else -> CoCodePoint_UTF8(downstream, errorStrategy)
-        }
+    ): IntCoPipeline<R> = when {
+        charsetName.equals("windows-1252", ignoreCase = true) -> CoUTF16_Windows1252(downstream, errorStrategy)
+        charsetName.equals("ISO-8859-1", ignoreCase = true) -> CoUTF16_ISO8859_1(downstream, errorStrategy)
+        charsetName.equals("ISO-8859-15", ignoreCase = true) -> CoUTF16_ISO8859_15(downstream, errorStrategy)
+        charsetName.equals("US-ASCII", ignoreCase = true) -> CoUTF16_ASCII(downstream, errorStrategy)
+        else -> CoCodePoint_UTF8(downstream, errorStrategy)
+    }
 
     /**
      * Get an encoder pipeline for the given character set.

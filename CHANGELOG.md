@@ -2,6 +2,10 @@
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
+## [2.1] - 2023-06-04
+### Changed
+- `CoDecoders.kt`: changed `getDecoder()` and `getEncoder()` to use case-insensitive comparison on charset name
+
 ## [2.0] - 2023-05-19
 ### Changed
 - `codec` classes: added error handling using `ErrorStrategy`
