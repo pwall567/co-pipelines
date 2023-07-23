@@ -2,6 +2,11 @@
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
+## [2.2] - 2023-07-24
+### Changed
+- `pom.xml`: updated Kotlin version to 1.8.22
+- `pom.xml`: updated dependency versions
+
 ## [2.1] - 2023-06-04
 ### Changed
 - `CoDecoders.kt`: changed `getDecoder()` and `getEncoder()` to use case-insensitive comparison on charset name
