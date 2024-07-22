@@ -31,8 +31,6 @@ import java.util.stream.Stream
 
 /**
  * Accept an [Iterator] as sequence of objects.
- *
- * @param   iterator    the [Iterator]
  */
 suspend fun <A, R> CoAcceptor<A, R>.accept(iterator: Iterator<A>) {
     while (iterator.hasNext())
@@ -41,8 +39,6 @@ suspend fun <A, R> CoAcceptor<A, R>.accept(iterator: Iterator<A>) {
 
 /**
  * Accept an [Iterable] (_e.g._ [List]) as sequence of objects.
- *
- * @param   iterable    the [Iterable]
  */
 suspend fun <A, R> CoAcceptor<A, R>.accept(iterable: Iterable<A>) {
     accept(iterable.iterator())
@@ -50,8 +46,6 @@ suspend fun <A, R> CoAcceptor<A, R>.accept(iterable: Iterable<A>) {
 
 /**
  * Accept a Java [Stream] as a sequence of objects.
- *
- * @param   stream  the [Stream]
  */
 suspend fun <A, R> CoAcceptor<A, R>.accept(stream: Stream<A>) {
     accept(stream.iterator())
@@ -59,8 +53,6 @@ suspend fun <A, R> CoAcceptor<A, R>.accept(stream: Stream<A>) {
 
 /**
  * Accept a [CharSequence] (_e.g._ [String]) as a sequence of integer values.
- *
- * @param   charSequence    the [CharSequence]
  */
 suspend fun <R> IntCoAcceptor<R>.accept(charSequence: CharSequence) {
     for (character in charSequence)
@@ -69,10 +61,6 @@ suspend fun <R> IntCoAcceptor<R>.accept(charSequence: CharSequence) {
 
 /**
  * Accept a [CharArray] as a sequence of integer values.
- *
- * @param   chars   the [CharArray]
- * @param   offset  the starting offset into the array
- * @param   length  the length to accept
  */
 suspend fun <R> IntCoAcceptor<R>.accept(chars: CharArray, offset: Int = 0, length: Int = chars.size - offset) {
     for (i in offset until offset + length)
@@ -81,10 +69,6 @@ suspend fun <R> IntCoAcceptor<R>.accept(chars: CharArray, offset: Int = 0, lengt
 
 /**
  * Accept a [ByteArray] as a sequence of integer values.
- *
- * @param   bytes   the [ByteArray]
- * @param   offset  the starting offset into the array
- * @param   length  the length to accept
  */
 suspend fun <R> IntCoAcceptor<R>.accept(bytes: ByteArray, offset: Int = 0, length: Int = bytes.size - offset) {
     for (i in offset until offset + length)
@@ -93,8 +77,6 @@ suspend fun <R> IntCoAcceptor<R>.accept(bytes: ByteArray, offset: Int = 0, lengt
 
 /**
  * Accept a [CharBuffer] as a sequence of integer values.
- *
- * @param   charBuffer  the [CharBuffer]
  */
 suspend fun <R> IntCoAcceptor<R>.accept(charBuffer: CharBuffer) {
     while (charBuffer.hasRemaining())
@@ -103,8 +85,6 @@ suspend fun <R> IntCoAcceptor<R>.accept(charBuffer: CharBuffer) {
 
 /**
  * Accept a [ByteArray] as a sequence of integer values.
- *
- * @param   byteBuffer  the [ByteBuffer]
  */
 suspend fun <R> IntCoAcceptor<R>.accept(byteBuffer: ByteBuffer) {
     while (byteBuffer.hasRemaining())

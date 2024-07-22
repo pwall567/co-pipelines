@@ -35,7 +35,6 @@ import net.pwall.util.CoIntOutput.coOutput2Hex
  * unencoded.
  *
  * @author  Peter Wall
- * @param   R       the pipeline result type
  */
 class SchemaURICoEncoder<out R>(
     downstream: IntCoAcceptor<R>,

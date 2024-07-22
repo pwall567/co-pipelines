@@ -34,7 +34,6 @@ import net.pwall.pipeline.html.HTMLEncoder.mappedEntities
  * HTML encoder - encode text using HTML escaping.
  *
  * @author  Peter Wall
- * @param   R       the pipeline result type
  */
 class HTMLCoEncoder<out R>(downstream: IntCoAcceptor<R>) : CoEncoderBase<R>(downstream) {
 

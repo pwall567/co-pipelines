@@ -34,7 +34,6 @@ import net.pwall.util.CoIntOutput.coOutput2Hex
  * URI encoder - encode text using URI percent-encoding.
  *
  * @author  Peter Wall
- * @param   R       the pipeline result type
  */
 class URICoEncoder<out R>(
     downstream: IntCoAcceptor<R>,

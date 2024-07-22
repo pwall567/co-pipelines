@@ -27,8 +27,6 @@ package net.pwall.pipeline
 
 /**
  * Base interface for pipeline classes.
- *
- * @param   R       the result type
  */
 interface BaseCoPipeline<out R> : BaseCoAcceptor<R> {
 
@@ -50,17 +48,11 @@ interface BaseCoPipeline<out R> : BaseCoAcceptor<R> {
 
 /**
  * A pipeline that accepts and emits values of the specified types.
- *
- * @param   A       the accepted (input) type
- * @param   E       the emitted (downstream) type
- * @param   R       the result type
  */
 interface CoPipeline<in A, in E, out R> : CoAcceptor<A, R>, BaseCoPipeline<R> {
 
     /**
      * Emit a value, that is, forward a value to the downstream acceptor.
-     *
-     * @param   value   the value
      */
     suspend fun emit(value: E)
 
@@ -68,16 +60,11 @@ interface CoPipeline<in A, in E, out R> : CoAcceptor<A, R>, BaseCoPipeline<R> {
 
 /**
  * A pipeline that takes integer values and emits object values.
- *
- * @param   E       the emitted (downstream) type
- * @param   R       the result type
  */
 interface IntObjectCoPipeline<in E, out R> : IntCoAcceptor<R>, BaseCoPipeline<R> {
 
     /**
      * Emit a value, that is, forward a value to the downstream acceptor.
-     *
-     * @param   value   the value
      */
     suspend fun emit(value: E)
 
@@ -85,16 +72,11 @@ interface IntObjectCoPipeline<in E, out R> : IntCoAcceptor<R>, BaseCoPipeline<R>
 
 /**
  * A pipeline that takes object values and emits integer values.
- *
- * @param   A       the accepted (input) type
- * @param   R       the result type
  */
 interface ObjectIntCoPipeline<in A, out R> : CoAcceptor<A, R>, BaseCoPipeline<R> {
 
     /**
      * Emit a value, that is, forward a value to the downstream acceptor.
-     *
-     * @param   value   the value
      */
     suspend fun emit(value: Int)
 
@@ -102,15 +84,11 @@ interface ObjectIntCoPipeline<in A, out R> : CoAcceptor<A, R>, BaseCoPipeline<R>
 
 /**
  * A pipeline that accepts and emits integer values.
- *
- * @param   R       the result type
  */
 interface IntCoPipeline<out R> : IntCoAcceptor<R>, BaseCoPipeline<R> {
 
     /**
      * Emit a value, that is, forward a value to the downstream acceptor.
-     *
-     * @param   value   the value
      */
     suspend fun emit(value: Int)
 
@@ -118,10 +96,6 @@ interface IntCoPipeline<out R> : IntCoAcceptor<R>, BaseCoPipeline<R> {
 
 /**
  * Abstract implementation of [CoPipeline].
- *
- * @param   A       the accepted (input) type
- * @param   E       the emitted (downstream) type
- * @param   R       the result type
  */
 abstract class AbstractCoPipeline<in A, in E, out R>(override val downstream: CoAcceptor<E, R>) :
         AbstractCoAcceptor<A, R>(), CoPipeline<A, E, R> {
@@ -136,8 +110,6 @@ abstract class AbstractCoPipeline<in A, in E, out R>(override val downstream: Co
 
     /**
      * Emit a value to the downstream [CoAcceptor].
-     *
-     * @param   value   the value to be forwarded
      */
     override suspend fun emit(value: E) {
         downstream.accept(value)
@@ -154,9 +126,6 @@ abstract class AbstractCoPipeline<in A, in E, out R>(override val downstream: Co
 
 /**
  * Abstract implementation of [IntObjectCoPipeline].
- *
- * @param   E       the emitted (downstream) type
- * @param   R       the result type
  */
 abstract class AbstractIntObjectCoPipeline<in E, out R>(override val downstream: CoAcceptor<E, R>) :
         AbstractIntCoAcceptor<R>(), IntObjectCoPipeline<E, R> {
@@ -171,8 +140,6 @@ abstract class AbstractIntObjectCoPipeline<in E, out R>(override val downstream:
 
     /**
      * Emit a value to the downstream [CoAcceptor].
-     *
-     * @param   value   the value to be forwarded
      */
     override suspend fun emit(value: E) {
         downstream.accept(value)
@@ -189,9 +156,6 @@ abstract class AbstractIntObjectCoPipeline<in E, out R>(override val downstream:
 
 /**
  * Abstract implementation of [ObjectIntCoPipeline].
- *
- * @param   A       the accepted (input) type
- * @param   R       the result type
  */
 abstract class AbstractObjectIntCoPipeline<in A, out R>(override val downstream: IntCoAcceptor<R>) :
         AbstractCoAcceptor<A, R>(), ObjectIntCoPipeline<A, R> {
@@ -206,8 +170,6 @@ abstract class AbstractObjectIntCoPipeline<in A, out R>(override val downstream:
 
     /**
      * Emit a value to the downstream [IntCoAcceptor].
-     *
-     * @param   value   the value to be forwarded
      */
     override suspend fun emit(value: Int) {
         downstream.accept(value)
@@ -224,8 +186,6 @@ abstract class AbstractObjectIntCoPipeline<in A, out R>(override val downstream:
 
 /**
  * Abstract implementation of [IntCoPipeline].
- *
- * @param   R       the result type
  */
 abstract class AbstractIntCoPipeline<out R>(override val downstream: IntCoAcceptor<R>) : AbstractIntCoAcceptor<R>(),
         IntCoPipeline<R> {
@@ -240,8 +200,6 @@ abstract class AbstractIntCoPipeline<out R>(override val downstream: IntCoAccept
 
     /**
      * Emit a value to the downstream [IntCoAcceptor].
-     *
-     * @param   value   the value to be forwarded
      */
     override suspend fun emit(value: Int) {
         downstream.accept(value)

@@ -32,6 +32,5 @@ import net.pwall.pipeline.xxml.CoDecoderBase
  * HTML decoder - decode text encoded with HTML escaping.
  *
  * @author  Peter Wall
- * @param   R       the pipeline result type
  */
 class HTMLCoDecoder<out R>(downstream: IntCoAcceptor<R>) : CoDecoderBase<R>(HTMLDecoder.reverseTable, downstream)

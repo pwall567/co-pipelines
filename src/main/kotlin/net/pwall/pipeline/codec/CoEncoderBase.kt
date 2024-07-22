@@ -33,7 +33,6 @@ import net.pwall.util.CoIntOutput
  * Base class for encoders.
  *
  * @author  Peter Wall
- * @param   R       the pipeline result type
  */
 abstract class CoEncoderBase<out R>(downstream: IntCoAcceptor<R>) : AbstractIntCoPipeline<R>(downstream) {
 

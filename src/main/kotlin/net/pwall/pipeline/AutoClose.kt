@@ -28,12 +28,6 @@ package net.pwall.pipeline
 /**
  * Use an acceptor and auto-close it on completion.  Unlike the similar function for [AutoCloseable], this function
  * returns the `result` of the acceptor, not the return value of the block.
- *
- * @param   block   a lambda to be executed with the acceptor as a parameter
- * @param   R       the result type of the acceptor
- * @param   T       the type of the acceptor
- * @receiver        the acceptor
- * @return          the `result` of the acceptor
  */
 suspend fun <R, T : BaseCoAcceptor<R>> T.use(block: suspend (T) -> Unit): R {
     var exceptionInMainBlock: Throwable? = null

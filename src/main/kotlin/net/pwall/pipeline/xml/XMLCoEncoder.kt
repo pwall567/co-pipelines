@@ -1,5 +1,5 @@
 /*
- * @(#) HTMLCoEncoder.kt
+ * @(#) XMLCoEncoder.kt
  *
  * co-pipelines   Pipeline library for Kotlin coroutines
  * Copyright (c) 2023 Peter Wall
@@ -32,7 +32,6 @@ import net.pwall.pipeline.codec.CoEncoderBase
  * XML encoder - encode text using XML escaping.
  *
  * @author  Peter Wall
- * @param   R       the pipeline result type
  */
 class XMLCoEncoder<out R>(downstream: IntCoAcceptor<R>) : CoEncoderBase<R>(downstream) {
 

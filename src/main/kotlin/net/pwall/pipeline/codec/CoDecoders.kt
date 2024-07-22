@@ -37,8 +37,6 @@ import net.pwall.pipeline.codec.ErrorStrategy.ThrowException
 
 /**
  * Base class for encoder and decoder classes to implement the error strategy.
- *
- * @param   R       the pipeline result type
  */
 abstract class CoErrorStrategyBase<out R>(
     downstream: IntCoAcceptor<R>,
@@ -57,8 +55,6 @@ abstract class CoErrorStrategyBase<out R>(
 /**
  * An encoder [IntCoPipeline] to convert Unicode code points to UTF-8.  Note that this encoder will convert surrogate
  * characters to 3-byte sequences without reporting an error, so it may be used as a UTF-16 to UTF-8 encoder.
- *
- * @param   R       the pipeline result type
  */
 class CoCodePoint_UTF8<out R>(
     downstream: IntCoAcceptor<R>,
@@ -91,8 +87,6 @@ class CoCodePoint_UTF8<out R>(
 
 /**
  * An encoder [IntCoPipeline] to convert Unicode code points to UTF-16.
- *
- * @param   R       the pipeline result type
  */
 class CoCodePoint_UTF16<out R>(
     downstream: IntCoAcceptor<R>,
@@ -116,8 +110,6 @@ class CoCodePoint_UTF16<out R>(
 
 /**
  * A decoder [IntCoPipeline] to convert UTF-8 to Unicode code points.
- *
- * @param   R       the pipeline result type
  */
 class CoUTF8_CodePoint<out R>(
     downstream: IntCoAcceptor<R>,
@@ -177,8 +169,6 @@ class CoUTF8_CodePoint<out R>(
 
 /**
  * A decoder [IntCoPipeline] to convert UTF-8 to UTF-16.
- *
- * @param   R       the pipeline result type
  */
 class CoUTF8_UTF16<out R>(
     downstream: IntCoAcceptor<R>,
@@ -245,8 +235,6 @@ class CoUTF8_UTF16<out R>(
 
 /**
  * A decoder [IntCoPipeline] to convert UTF-16 to Unicode code points.
- *
- * @param   R       the pipeline result type
  */
 class CoUTF16_CodePoint<out R>(
     downstream: IntCoAcceptor<R>,
@@ -284,8 +272,6 @@ class CoUTF16_CodePoint<out R>(
 
 /**
  * A decoder [IntCoPipeline] to convert one-to-one mapping character encodings to Unicode code points.
- *
- * @param   R       the pipeline result type
  */
 open class DecodingCoPipeline<out R>(
     downstream: IntCoAcceptor<R>,
@@ -305,8 +291,6 @@ open class DecodingCoPipeline<out R>(
 
 /**
  * An encoder [IntCoPipeline] to convert Unicode code points to one-to-one mapping character encodings.
- *
- * @param   R       the pipeline result type
  */
 open class EncodingCoPipeline<out R>(
     downstream: IntCoAcceptor<R>,

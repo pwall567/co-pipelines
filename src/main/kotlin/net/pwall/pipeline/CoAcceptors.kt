@@ -27,8 +27,6 @@ package net.pwall.pipeline
 
 /**
  * The base interface for pipeline and acceptor classes.
- *
- * @param   R       the result type
  */
 interface BaseCoAcceptor<out R> {
 
@@ -57,16 +55,11 @@ interface BaseCoAcceptor<out R> {
 
 /**
  * An acceptor that takes a value of the specified type.
- *
- * @param   A       the accepted (input) type
- * @param   R       the result type
  */
 interface CoAcceptor<in A, out R> : BaseCoAcceptor<R> {
 
     /**
      * Accept a value.
-     *
-     * @param   value   the value to be processed
      */
     suspend fun accept(value: A?)
 
@@ -75,15 +68,11 @@ interface CoAcceptor<in A, out R> : BaseCoAcceptor<R> {
 /**
  * An acceptor that takes an integer value.  Includes default functions to cater for the common cases of strings or byte
  * arrays being used for integer values.
- *
- * @param   R       the result type
  */
 interface IntCoAcceptor<out R> : BaseCoAcceptor<R> {
 
     /**
      * Accept a value.
-     *
-     * @param   value   the value to be processed
      */
     suspend fun accept(value: Int)
 
@@ -91,8 +80,6 @@ interface IntCoAcceptor<out R> : BaseCoAcceptor<R> {
 
 /**
  * Common functionality for [AbstractCoAcceptor] and [AbstractIntCoAcceptor].
- *
- * @param   R       the result type
  */
 abstract class BaseAbstractCoAcceptor<out R> : BaseCoAcceptor<R> {
 
@@ -113,9 +100,6 @@ abstract class BaseAbstractCoAcceptor<out R> : BaseCoAcceptor<R> {
 
 /**
  * Abstract implementation of [CoAcceptor].
- *
- * @param   A       the accepted (input) type
- * @param   R       the result type
  */
 abstract class AbstractCoAcceptor<in A, out R> : BaseAbstractCoAcceptor<R>(), CoAcceptor<A, R> {
 
@@ -123,8 +107,6 @@ abstract class AbstractCoAcceptor<in A, out R> : BaseAbstractCoAcceptor<R>(), Co
      * Accept an object.  Check for pipeline already closed, and handle end of data.  This assumes that `null` is used
      * to indicate end of data; if that is not the case this method must be overridden or an alternative implementation
      * of [CoAcceptor] used.
-     *
-     * @param   value       the input value
      */
     override suspend fun accept(value: A?) {
         check(!closed) { "Acceptor is closed" }
@@ -137,8 +119,6 @@ abstract class AbstractCoAcceptor<in A, out R> : BaseAbstractCoAcceptor<R>(), Co
     /**
      * Accept a value, after `closed` check and test for end of data.  Implementing classes must supply an
      * implementation of this method.
-     *
-     * @param   value       the input value
      */
     abstract suspend fun acceptObject(value: A)
 
@@ -146,15 +126,11 @@ abstract class AbstractCoAcceptor<in A, out R> : BaseAbstractCoAcceptor<R>(), Co
 
 /**
  * Abstract implementation of [IntCoAcceptor].
- *
- * @param   R       the result type
  */
 abstract class AbstractIntCoAcceptor<out R> : BaseAbstractCoAcceptor<R>(), IntCoAcceptor<R> {
 
     /**
      * Accept an `int`.  Check for acceptor already closed, and handle end of data.
-     *
-     * @param   value       the input value
      */
     override suspend fun accept(value: Int) {
         check(!closed) { "Acceptor is closed" }
@@ -167,8 +143,6 @@ abstract class AbstractIntCoAcceptor<out R> : BaseAbstractCoAcceptor<R>(), IntCo
     /**
      * Accept an `int`, after `closed` check and test for end of data.  Implementing classes must supply an
      * implementation of this method.
-     *
-     * @param   value       the input value
      */
     abstract suspend fun acceptInt(value: Int)
 
@@ -201,8 +175,6 @@ class SimpleCoAcceptor<in A>(val block: suspend (A) -> Unit) : AbstractCoAccepto
 
     /**
      * Accept a value, after `closed` check and test for end of data.  Invoke the lambda with the value.
-     *
-     * @param   value       the input value
      */
     override suspend fun acceptObject(value: A) {
         block(value)
@@ -215,8 +187,5 @@ class SimpleCoAcceptor<in A>(val block: suspend (A) -> Unit) : AbstractCoAccepto
 
 /**
  * Create a [SimpleCoAcceptor].
- *
- * @param   block   lambda to execute with each value
- * @param   A       the accepted (input) type
  */
 fun <A> simpleCoAcceptor(block: suspend (A) -> Unit) = SimpleCoAcceptor(block)

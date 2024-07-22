@@ -39,8 +39,6 @@ class ByteChannelCoAcceptor(private val channel: ByteWriteChannel) : AbstractInt
 
     /**
      * Accept a value, after `closed` check and test for end of data.  Send the value to the [ByteWriteChannel].
-     *
-     * @param   value       the input value
      */
     override suspend fun acceptInt(value: Int) {
         channel.writeByte(value.toByte())

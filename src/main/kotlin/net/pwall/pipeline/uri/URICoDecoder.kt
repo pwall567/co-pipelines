@@ -1,8 +1,8 @@
 /*
- * @(#) URICODecoder.kt
+ * @(#) URICoDecoder.kt
  *
  * co-pipelines   Pipeline library for Kotlin coroutines
- * Copyright (c) 2021, 2023 Peter Wall
+ * Copyright (c) 2021, 2023, 2024 Peter Wall
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -33,9 +33,8 @@ import net.pwall.pipeline.codec.ErrorStrategy
  * URI decoder - decode text using URI percent-encoding.
  *
  * @author  Peter Wall
- * @param   R       the pipeline result type
  */
-class URICODecoder<out R>(
+class URICoDecoder<out R>(
     downstream: IntCoAcceptor<R>,
     errorStrategy: ErrorStrategy = ErrorStrategy.DEFAULT,
 ) : CoErrorStrategyBase<R>(downstream, errorStrategy) {

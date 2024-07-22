@@ -32,7 +32,6 @@ import net.pwall.pipeline.IntCoAcceptor
  * Base class for XML and HTML decoders.
  *
  * @author  Peter Wall
- * @param   R       the pipeline result type
  */
 open class CoDecoderBase<out R>(private val table: Array<MappingEntry>, downstream: IntCoAcceptor<R>) :
         AbstractIntCoPipeline<R>(downstream) {

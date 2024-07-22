@@ -35,33 +35,33 @@ import net.pwall.pipeline.accept
 class URICoDecoderTest {
 
     @Test fun `should decode plain string unmodified`() = runBlocking {
-        URICODecoder(StringCoAcceptor()).let {
+        URICoDecoder(StringCoAcceptor()).let {
             it.accept("plain")
             expect("plain") { it.result }
         }
-        URICODecoder(StringCoAcceptor()).let {
+        URICoDecoder(StringCoAcceptor()).let {
             it.accept("aMuchLongerString")
             expect("aMuchLongerString") { it.result }
         }
     }
 
     @Test fun `should decode percent sequence`() = runBlocking {
-        URICODecoder(StringCoAcceptor()).let {
+        URICoDecoder(StringCoAcceptor()).let {
             it.accept("Hello%2C%20World%21")
             expect("Hello, World!") { it.result }
         }
-        URICODecoder(StringCoAcceptor()).let {
+        URICoDecoder(StringCoAcceptor()).let {
             it.accept("a%20more-complicated%20string%3A%20a%2Fb%2Bc%25e.%28%3F%3F%3F%29")
             expect("a more-complicated string: a/b+c%e.(???)") { it.result }
         }
     }
 
     @Test fun `should decode plus as space`() = runBlocking {
-        URICODecoder(StringCoAcceptor()).let {
+        URICoDecoder(StringCoAcceptor()).let {
             it.accept("Hello%2C+World%21")
             expect("Hello, World!") { it.result }
         }
-        URICODecoder(StringCoAcceptor()).let {
+        URICoDecoder(StringCoAcceptor()).let {
             it.accept("a+more-complicated+string%3A+a%2Fb%2Bc%25e.%28%3F%3F%3F%29")
             expect("a more-complicated string: a/b+c%e.(???)") { it.result }
         }

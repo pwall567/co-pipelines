@@ -36,8 +36,6 @@ class ChannelCoAcceptor<in A>(private val channel: SendChannel<A>) : AbstractCoA
 
     /**
      * Accept a value, after `closed` check and test for end of data.  Send the value to the [SendChannel].
-     *
-     * @param   value       the input value
      */
     override suspend fun acceptObject(value: A) {
         channel.send(value)

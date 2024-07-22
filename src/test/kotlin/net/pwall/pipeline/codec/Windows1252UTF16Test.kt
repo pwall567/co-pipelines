@@ -1,5 +1,5 @@
 /*
- * @(#) Windows1252CodePointTest.kt
+ * @(#) Windows1252UTF16Test.kt
  *
  * co-pipelines   Pipeline library for Kotlin coroutines
  * Copyright (c) 2021 Peter Wall

@@ -40,7 +40,6 @@ import net.pwall.pipeline.codec.ErrorStrategy
  * allows whitespace between groups of 4 characters.
  *
  * @author  Peter Wall
- * @param   R   the pipeline result type
  */
 class Base64CoDecoder<out R>(
     downstream: IntCoAcceptor<R>,
