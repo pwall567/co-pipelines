@@ -26,8 +26,9 @@
 package net.pwall.pipeline.uri
 
 import kotlin.test.Test
-import kotlin.test.expect
 import kotlinx.coroutines.runBlocking
+
+import io.kstuff.test.shouldBe
 
 import net.pwall.pipeline.StringCoAcceptor
 import net.pwall.pipeline.accept
@@ -37,18 +38,18 @@ class SchemaURICoEncoderTest {
     @Test fun `should encode schema fragment with dollar sign unmodified`() = runBlocking {
         SchemaURICoEncoder(StringCoAcceptor()).let {
             it.accept("\$ref")
-            expect("\$ref") { it.result }
+            it.result shouldBe "\$ref"
         }
     }
 
     @Test fun `should encode reserved characters`() = runBlocking {
         SchemaURICoEncoder(StringCoAcceptor()).let {
             it.accept("Hello, World!")
-            expect("Hello%2C%20World%21") { it.result }
+            it.result shouldBe "Hello%2C%20World%21"
         }
         SchemaURICoEncoder(StringCoAcceptor()).let {
             it.accept("a more-complicated string: a/b+c%e.(???)")
-            expect("a%20more-complicated%20string%3A%20a%2Fb%2Bc%25e.%28%3F%3F%3F%29") { it.result }
+            it.result shouldBe "a%20more-complicated%20string%3A%20a%2Fb%2Bc%25e.%28%3F%3F%3F%29"
         }
     }
 

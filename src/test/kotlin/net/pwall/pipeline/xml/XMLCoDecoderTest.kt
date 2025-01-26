@@ -26,8 +26,9 @@
 package net.pwall.pipeline.xml
 
 import kotlin.test.Test
-import kotlin.test.expect
 import kotlinx.coroutines.runBlocking
+
+import io.kstuff.test.shouldBe
 
 import net.pwall.pipeline.StringCoAcceptor
 import net.pwall.pipeline.accept
@@ -37,33 +38,33 @@ class XMLCoDecoderTest {
     @Test fun `should decode plain string unmodified`() = runBlocking {
         XMLCoDecoder(StringCoAcceptor()).let {
             it.accept("plain")
-            expect("plain") { it.result }
+            it.result shouldBe "plain"
         }
         XMLCoDecoder(StringCoAcceptor()).let {
             it.accept("aMuchLongerString")
-            expect("aMuchLongerString") { it.result }
+            it.result shouldBe "aMuchLongerString"
         }
     }
 
     @Test fun `should decode special characters`() = runBlocking {
         XMLCoDecoder(StringCoAcceptor()).let {
             it.accept("&lt;div&gt;hello&lt;/div&gt;")
-            expect("<div>hello</div>") { it.result }
+            it.result shouldBe "<div>hello</div>"
         }
         XMLCoDecoder(StringCoAcceptor()).let {
             it.accept("&lt;div class=&quot;test&quot;&gt;It&apos;s OK &amp;amp; working&lt;/div&gt;")
-            expect("<div class=\"test\">It's OK &amp; working</div>") { it.result }
+            it.result shouldBe "<div class=\"test\">It's OK &amp; working</div>"
         }
     }
 
     @Test fun `should decode nonstandard special characters`() = runBlocking {
         XMLCoDecoder(StringCoAcceptor()).let {
             it.accept("&lt;div&gt;&#xA1;hol&#xE1;!&lt;/div&gt;")
-            expect("<div>\u00A1hol\u00E1!</div>") { it.result }
+            it.result shouldBe "<div>\u00A1hol\u00E1!</div>"
         }
         XMLCoDecoder(StringCoAcceptor()).let {
             it.accept("&lt;div&gt;Even &#x2014; more&lt;/div&gt;")
-            expect("<div>Even \u2014 more</div>") { it.result }
+            it.result shouldBe "<div>Even \u2014 more</div>"
         }
     }
 

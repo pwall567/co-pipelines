@@ -26,8 +26,9 @@
 package net.pwall.pipeline
 
 import kotlin.test.Test
-import kotlin.test.expect
 import kotlinx.coroutines.runBlocking
+
+import io.kstuff.test.shouldBe
 
 class CoStringsTest {
 
@@ -38,8 +39,8 @@ class CoStringsTest {
         stringCoAcceptor.output('l')
         stringCoAcceptor.output('l')
         stringCoAcceptor.output('o')
-        expect(5) { stringCoAcceptor.size }
-        expect("Hello") { stringCoAcceptor.result }
+        stringCoAcceptor.size shouldBe 5
+        stringCoAcceptor.result shouldBe "Hello"
     }
 
     @Test fun `should output strings to IntCoAcceptor`() = runBlocking {
@@ -47,7 +48,7 @@ class CoStringsTest {
         stringCoAcceptor.output("Hello")
         stringCoAcceptor.output(' ')
         stringCoAcceptor.output("World!")
-        expect("Hello World!") { stringCoAcceptor.result }
+        stringCoAcceptor.result shouldBe "Hello World!"
     }
 
     @Test fun `should reset output`() = runBlocking {
@@ -56,93 +57,93 @@ class CoStringsTest {
         stringCoAcceptor.reset()
         stringCoAcceptor.output(' ')
         stringCoAcceptor.output("World!")
-        expect(" World!") { stringCoAcceptor.result }
+        stringCoAcceptor.result shouldBe " World!"
     }
 
     @Test fun `should output hex bytes to IntCoAcceptor`() = runBlocking {
         val stringCoAcceptor = StringCoAcceptor()
         stringCoAcceptor.outputHex(0x01.toByte())
         stringCoAcceptor.outputHex(0x8F.toByte())
-        expect("018F") { stringCoAcceptor.result }
+        stringCoAcceptor.result shouldBe "018F"
     }
 
     @Test fun `should output hex short to IntCoAcceptor`() = runBlocking {
         val stringCoAcceptor = StringCoAcceptor()
         stringCoAcceptor.outputHex(0x018F.toShort())
         stringCoAcceptor.outputHex(0x9ABC.toShort())
-        expect("018F9ABC") { stringCoAcceptor.result }
+        stringCoAcceptor.result shouldBe "018F9ABC"
     }
 
     @Test fun `should output int to IntCoAcceptor`() = runBlocking {
         val stringCoAcceptor = StringCoAcceptor()
         stringCoAcceptor.outputInt(123456)
-        expect("123456") { stringCoAcceptor.result }
+        stringCoAcceptor.result shouldBe "123456"
         stringCoAcceptor.reset()
         stringCoAcceptor.outputInt(0)
-        expect("0") { stringCoAcceptor.result }
+        stringCoAcceptor.result shouldBe "0"
         stringCoAcceptor.reset()
         stringCoAcceptor.outputInt(-1)
-        expect("-1") { stringCoAcceptor.result }
+        stringCoAcceptor.result shouldBe "-1"
         stringCoAcceptor.reset()
         stringCoAcceptor.outputInt(58974228)
-        expect("58974228") { stringCoAcceptor.result }
+        stringCoAcceptor.result shouldBe "58974228"
         stringCoAcceptor.reset()
         stringCoAcceptor.outputPositiveInt(58974228)
-        expect("58974228") { stringCoAcceptor.result }
+        stringCoAcceptor.result shouldBe "58974228"
         stringCoAcceptor.reset()
         stringCoAcceptor.outputInt(-7762835)
-        expect("-7762835") { stringCoAcceptor.result }
+        stringCoAcceptor.result shouldBe "-7762835"
     }
 
     @Test fun `should output Long to IntCoAcceptor`() = runBlocking {
         val stringCoAcceptor = StringCoAcceptor(8)
         stringCoAcceptor.outputLong(123456789123456789)
-        expect("123456789123456789") { stringCoAcceptor.result }
+        stringCoAcceptor.result shouldBe "123456789123456789"
         stringCoAcceptor.reset()
         stringCoAcceptor.outputLong(0)
-        expect("0") { stringCoAcceptor.result }
+        stringCoAcceptor.result shouldBe "0"
         stringCoAcceptor.reset()
         stringCoAcceptor.outputLong(-1)
-        expect("-1") { stringCoAcceptor.result }
+        stringCoAcceptor.result shouldBe "-1"
         stringCoAcceptor.reset()
         stringCoAcceptor.outputLong(58974228)
-        expect("58974228") { stringCoAcceptor.result }
+        stringCoAcceptor.result shouldBe "58974228"
         stringCoAcceptor.reset()
         stringCoAcceptor.outputPositiveLong(58974228)
-        expect("58974228") { stringCoAcceptor.result }
+        stringCoAcceptor.result shouldBe "58974228"
         stringCoAcceptor.reset()
         stringCoAcceptor.outputLong(-776283544328776)
-        expect("-776283544328776") { stringCoAcceptor.result }
+        stringCoAcceptor.result shouldBe "-776283544328776"
     }
 
     @Test fun `should output 2 digits to IntCoAcceptor`() = runBlocking {
         val stringCoAcceptor = StringCoAcceptor(8)
         stringCoAcceptor.output2Digits(0)
-        expect("00") { stringCoAcceptor.result }
+        stringCoAcceptor.result shouldBe "00"
         stringCoAcceptor.reset()
         stringCoAcceptor.output2Digits(3)
-        expect("03") { stringCoAcceptor.result }
+        stringCoAcceptor.result shouldBe "03"
         stringCoAcceptor.reset()
         stringCoAcceptor.output2Digits(27)
-        expect("27") { stringCoAcceptor.result }
+        stringCoAcceptor.result shouldBe "27"
         stringCoAcceptor.reset()
         stringCoAcceptor.output2Digits(99)
-        expect("99") { stringCoAcceptor.result }
+        stringCoAcceptor.result shouldBe "99"
     }
 
     @Test fun `should output 3 digits to IntCoAcceptor`() = runBlocking {
         val stringCoAcceptor = StringCoAcceptor(8)
         stringCoAcceptor.output3Digits(0)
-        expect("000") { stringCoAcceptor.result }
+        stringCoAcceptor.result shouldBe "000"
         stringCoAcceptor.reset()
         stringCoAcceptor.output3Digits(3)
-        expect("003") { stringCoAcceptor.result }
+        stringCoAcceptor.result shouldBe "003"
         stringCoAcceptor.reset()
         stringCoAcceptor.output3Digits(27)
-        expect("027") { stringCoAcceptor.result }
+        stringCoAcceptor.result shouldBe "027"
         stringCoAcceptor.reset()
         stringCoAcceptor.output3Digits(123)
-        expect("123") { stringCoAcceptor.result }
+        stringCoAcceptor.result shouldBe "123"
     }
 
 }

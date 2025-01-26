@@ -26,8 +26,9 @@
 package net.pwall.pipeline.html
 
 import kotlin.test.Test
-import kotlin.test.expect
 import kotlinx.coroutines.runBlocking
+
+import io.kstuff.test.shouldBe
 
 import net.pwall.pipeline.StringCoAcceptor
 import net.pwall.pipeline.accept
@@ -37,44 +38,44 @@ class HTMLCoEncoderTest {
     @Test fun `should encode plain string unmodified`() = runBlocking {
         HTMLCoEncoder(StringCoAcceptor()).let {
             it.accept("plain")
-            expect("plain") { it.result}
+            it.result shouldBe "plain"
         }
         HTMLCoEncoder(StringCoAcceptor()).let {
             it.accept("aMuchLongerString")
-            expect("aMuchLongerString") { it.result}
+            it.result shouldBe "aMuchLongerString"
         }
     }
 
     @Test fun `should encode special characters`() = runBlocking {
         HTMLCoEncoder(StringCoAcceptor()).let {
             it.accept("<div>hello</div>")
-            expect("&lt;div&gt;hello&lt;/div&gt;") { it.result}
+            it.result shouldBe "&lt;div&gt;hello&lt;/div&gt;"
         }
         HTMLCoEncoder(StringCoAcceptor()).let {
             it.accept("<div class=\"test\">It's OK &amp; working</div>")
-            expect("&lt;div class=&quot;test&quot;&gt;It's OK &amp;amp; working&lt;/div&gt;") { it.result}
+            it.result shouldBe "&lt;div class=&quot;test&quot;&gt;It's OK &amp;amp; working&lt;/div&gt;"
         }
     }
 
     @Test fun `should encode named special characters`() = runBlocking {
         HTMLCoEncoder(StringCoAcceptor()).let {
             it.accept("<div>\u00A1hol\u00E1!</div>")
-            expect("&lt;div&gt;&iexcl;hol&aacute;!&lt;/div&gt;") { it.result}
+            it.result shouldBe "&lt;div&gt;&iexcl;hol&aacute;!&lt;/div&gt;"
         }
         HTMLCoEncoder(StringCoAcceptor()).let {
             it.accept("<div>Even \u2014 more</div>")
-            expect("&lt;div&gt;Even &mdash; more&lt;/div&gt;") { it.result}
+            it.result shouldBe "&lt;div&gt;Even &mdash; more&lt;/div&gt;"
         }
     }
 
     @Test fun `should encode nonstandard special characters`() = runBlocking {
         HTMLCoEncoder(StringCoAcceptor()).let {
             it.accept("<div>M\u0101ori\u0007</div>")
-            expect("&lt;div&gt;M&#x101;ori&#x7;&lt;/div&gt;") { it.result}
+            it.result shouldBe "&lt;div&gt;M&#x101;ori&#x7;&lt;/div&gt;"
         }
         HTMLCoEncoder(StringCoAcceptor()).let {
             it.accept("\uFEFFBOM \u2E19 \u20A4")
-            expect("&#xFEFF;BOM &#x2E19; &#x20A4;") { it.result}
+            it.result shouldBe "&#xFEFF;BOM &#x2E19; &#x20A4;"
         }
     }
 

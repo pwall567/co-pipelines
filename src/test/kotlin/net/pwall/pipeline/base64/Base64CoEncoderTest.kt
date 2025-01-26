@@ -26,8 +26,9 @@
 package net.pwall.pipeline.base64
 
 import kotlin.test.Test
-import kotlin.test.expect
 import kotlinx.coroutines.runBlocking
+
+import io.kstuff.test.shouldBe
 
 import net.pwall.pipeline.StringCoAcceptor
 import net.pwall.pipeline.accept
@@ -38,7 +39,7 @@ class Base64CoEncoderTest {
         val pipeline = Base64CoEncoder(StringCoAcceptor())
         pipeline.accept("ABCD")
         pipeline.close()
-        expect("QUJDRA==") { pipeline.result }
+        pipeline.result shouldBe "QUJDRA=="
     }
 
     @Test fun `should encode high characters`() = runBlocking {
@@ -47,14 +48,14 @@ class Base64CoEncoderTest {
         pipeline.accept(0xFF)
         pipeline.accept(0xBF)
         pipeline.close()
-        expect("+/+/") { pipeline.result }
+        pipeline.result shouldBe "+/+/"
     }
 
     @Test fun `should encode simple string using URL encoding`() = runBlocking {
         val pipeline = Base64CoEncoder(StringCoAcceptor(), urlSafe = true)
         pipeline.accept("ABCD")
         pipeline.close()
-        expect("QUJDRA") { pipeline.result }
+        pipeline.result shouldBe "QUJDRA"
     }
 
     @Test fun `should encode high characters using URL encoding`() = runBlocking {
@@ -63,7 +64,7 @@ class Base64CoEncoderTest {
         pipeline.accept(0xFF)
         pipeline.accept(0xBF)
         pipeline.close()
-        expect("-_-_") { pipeline.result }
+        pipeline.result shouldBe "-_-_"
     }
 
 }

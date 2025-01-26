@@ -26,8 +26,9 @@
 package net.pwall.pipeline
 
 import kotlin.test.Test
-import kotlin.test.expect
 import kotlinx.coroutines.runBlocking
+
+import io.kstuff.test.shouldBe
 
 class LineCoPipelineTest {
 
@@ -35,14 +36,14 @@ class LineCoPipelineTest {
         val input = "abc\ndef\nghi\n"
         val pipeline = LineCoPipeline(ListCoAcceptor()).apply { accept(input) }
         val expected = listOf("abc", "def", "ghi")
-        expect(expected) { pipeline.result }
+        pipeline.result shouldBe expected
     }
 
     @Test fun `should split text on CRLF`() = runBlocking {
         val input = "abc\r\ndef\r\nghi\r\n"
         val pipeline = LineCoPipeline(ListCoAcceptor()).apply { accept(input) }
         val expected = listOf("abc", "def", "ghi")
-        expect(expected) { pipeline.result }
+        pipeline.result shouldBe expected
     }
 
     @Test fun `should allow missing line terminator at end`() = runBlocking {
@@ -50,7 +51,7 @@ class LineCoPipelineTest {
         val pipeline = LineCoPipeline(ListCoAcceptor())
         val result = pipeline.use { it.accept(input) }
         val expected = listOf("abc", "de")
-        expect(expected) { result }
+        result shouldBe expected
     }
 
 }

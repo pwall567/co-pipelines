@@ -26,21 +26,22 @@
 package net.pwall.pipeline
 
 import kotlin.test.Test
-import kotlin.test.assertEquals
 import kotlinx.coroutines.io.ByteChannel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+
+import io.kstuff.test.shouldBe
 
 class ByteChannelCoAcceptorTest {
 
     @Test fun `should send data to a ByteChannel`() = runBlocking {
         val channel = ByteChannel(true)
         val job = launch {
-            assertEquals('H'.code.toByte(), channel.readByte())
-            assertEquals('e'.code.toByte(), channel.readByte())
-            assertEquals('l'.code.toByte(), channel.readByte())
-            assertEquals('l'.code.toByte(), channel.readByte())
-            assertEquals('o'.code.toByte(), channel.readByte())
+            channel.readByte() shouldBe 'H'.code.toByte()
+            channel.readByte() shouldBe 'e'.code.toByte()
+            channel.readByte() shouldBe 'l'.code.toByte()
+            channel.readByte() shouldBe 'l'.code.toByte()
+            channel.readByte() shouldBe 'o'.code.toByte()
         }
         val byteChannelCoAcceptor = ByteChannelCoAcceptor(channel)
         byteChannelCoAcceptor.accept("Hello")

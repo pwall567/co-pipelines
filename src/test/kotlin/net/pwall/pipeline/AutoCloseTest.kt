@@ -26,19 +26,19 @@
 package net.pwall.pipeline
 
 import kotlin.test.Test
-import kotlin.test.assertNotNull
-import kotlin.test.assertTrue
-import kotlin.test.expect
 import kotlinx.coroutines.runBlocking
+
+import io.kstuff.test.shouldBe
+import io.kstuff.test.shouldBeNonNull
 
 class AutoCloseTest {
 
     @Test fun `should close acceptor at end of use`() = runBlocking {
         val acceptor = ListCoAcceptor<String>()
         val list = acceptor.use { it.accept("Hello!") }
-        assertTrue { acceptor.closed }
-        expect(1) { list.size }
-        expect("Hello!") { list[0] }
+        acceptor.closed shouldBe true
+        list.size shouldBe 1
+        list[0] shouldBe "Hello!"
     }
 
     @Test fun `should close acceptor even when exception thrown`() = runBlocking {
@@ -50,8 +50,8 @@ class AutoCloseTest {
         catch (ignore: IllegalArgumentException) {
             exceptionThrown = true
         }
-        assertTrue { exceptionThrown }
-        assertTrue { acceptor.closed }
+        exceptionThrown shouldBe true
+        acceptor.closed shouldBe true
     }
 
     @Test fun `should handle exception thrown in close`() = runBlocking {
@@ -63,7 +63,7 @@ class AutoCloseTest {
         catch (ignore: IllegalStateException) {
             exceptionThrown = true
         }
-        assertTrue { exceptionThrown }
+        exceptionThrown shouldBe true
     }
 
     @Test fun `should handle exception thrown in both main body and close`() = runBlocking {
@@ -75,8 +75,8 @@ class AutoCloseTest {
         catch (e: IllegalArgumentException) {
             exception = e
         }
-        assertNotNull(exception)
-        assertTrue { exception.suppressed[0] is TestCloseException }
+        exception.shouldBeNonNull()
+        (exception.suppressed[0] is TestCloseException) shouldBe true
     }
 
     object TestAcceptor1 : AbstractCoAcceptor<String, String>() {

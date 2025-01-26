@@ -26,9 +26,10 @@
 package net.pwall.pipeline.codec
 
 import kotlin.test.Test
-import kotlin.test.assertTrue
-import kotlin.test.expect
 import kotlinx.coroutines.runBlocking
+
+import io.kstuff.test.shouldBe
+
 import net.pwall.pipeline.TestIntCoAcceptor
 
 class Windows1252UTF16Test {
@@ -36,21 +37,21 @@ class Windows1252UTF16Test {
     @Test fun `should pass through single char`() = runBlocking {
         val pipe = CoWindows1252_UTF16(TestIntCoAcceptor())
         pipe.accept('A'.code)
-        assertTrue(pipe.complete)
+        pipe.complete shouldBe true
         val result = pipe.result
-        expect(1) { result.size }
-        expect('A'.code) { result[0] }
+        result.size shouldBe 1
+        result[0] shouldBe 'A'.code
     }
 
     @Test fun `should pass through single char plus terminator`() = runBlocking {
         val pipe = CoWindows1252_UTF16(TestIntCoAcceptor())
         pipe.accept('A'.code)
         pipe.accept(-1)
-        assertTrue(pipe.complete)
-        assertTrue(pipe.closed)
+        pipe.complete shouldBe true
+        pipe.closed shouldBe true
         val result = pipe.result
-        expect(1) { result.size }
-        expect('A'.code) { result[0] }
+        result.size shouldBe 1
+        result[0] shouldBe 'A'.code
     }
 
     @Test fun `should pass through special chars`() = runBlocking {
@@ -69,23 +70,23 @@ class Windows1252UTF16Test {
         pipe.accept(0x8C)
         pipe.accept(0x8E)
         pipe.accept(0x91)
-        assertTrue(pipe.complete)
+        pipe.complete shouldBe true
         val result = pipe.result
-        expect(14) { result.size }
-        expect(0x20AC) { result[0] }
-        expect(0x201A) { result[1] }
-        expect(0x0192) { result[2] }
-        expect(0x201E) { result[3] }
-        expect(0x2026) { result[4] }
-        expect(0x2020) { result[5] }
-        expect(0x2021) { result[6] }
-        expect(0x02C6) { result[7] }
-        expect(0x2030) { result[8] }
-        expect(0x0160) { result[9] }
-        expect(0x2039) { result[10] }
-        expect(0x0152) { result[11] }
-        expect(0x017D) { result[12] }
-        expect(0x2018) { result[13] }
+        result.size shouldBe 14
+        result[0] shouldBe 0x20AC
+        result[1] shouldBe 0x201A
+        result[2] shouldBe 0x0192
+        result[3] shouldBe 0x201E
+        result[4] shouldBe 0x2026
+        result[5] shouldBe 0x2020
+        result[6] shouldBe 0x2021
+        result[7] shouldBe 0x02C6
+        result[8] shouldBe 0x2030
+        result[9] shouldBe 0x0160
+        result[10] shouldBe 0x2039
+        result[11] shouldBe 0x0152
+        result[12] shouldBe 0x017D
+        result[13] shouldBe 0x2018
     }
 
 }

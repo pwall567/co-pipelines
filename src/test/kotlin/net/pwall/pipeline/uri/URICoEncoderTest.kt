@@ -26,8 +26,9 @@
 package net.pwall.pipeline.uri
 
 import kotlin.test.Test
-import kotlin.test.expect
 import kotlinx.coroutines.runBlocking
+
+import io.kstuff.test.shouldBe
 
 import net.pwall.pipeline.StringCoAcceptor
 import net.pwall.pipeline.accept
@@ -37,33 +38,33 @@ class URICoEncoderTest {
     @Test fun `should encode plain string unmodified`() = runBlocking {
         URICoEncoder(StringCoAcceptor()).let {
             it.accept("plain")
-            expect("plain") { it.result }
+            it.result shouldBe "plain"
         }
         URICoEncoder(StringCoAcceptor()).let {
             it.accept("aMuchLongerString")
-            expect("aMuchLongerString") { it.result }
+            it.result shouldBe "aMuchLongerString"
         }
     }
 
     @Test fun `should encode reserved characters`() = runBlocking {
         URICoEncoder(StringCoAcceptor()).let {
             it.accept("Hello, World!")
-            expect("Hello%2C%20World%21") { it.result }
+            it.result shouldBe "Hello%2C%20World%21"
         }
         URICoEncoder(StringCoAcceptor()).let {
             it.accept("a more-complicated string: a/b+c%e.(???)")
-            expect("a%20more-complicated%20string%3A%20a%2Fb%2Bc%25e.%28%3F%3F%3F%29") { it.result }
+            it.result shouldBe "a%20more-complicated%20string%3A%20a%2Fb%2Bc%25e.%28%3F%3F%3F%29"
         }
     }
 
     @Test fun `should encode space as plus when selected`() = runBlocking {
         URICoEncoder(StringCoAcceptor(), true).let {
             it.accept("Hello, World!")
-            expect("Hello%2C+World%21") { it.result }
+            it.result shouldBe "Hello%2C+World%21"
         }
         URICoEncoder(StringCoAcceptor(), true).let {
             it.accept("a more-complicated string: a/b+c%e.(???)")
-            expect("a+more-complicated+string%3A+a%2Fb%2Bc%25e.%28%3F%3F%3F%29") { it.result }
+            it.result shouldBe "a+more-complicated+string%3A+a%2Fb%2Bc%25e.%28%3F%3F%3F%29"
         }
     }
 

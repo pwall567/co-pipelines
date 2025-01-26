@@ -26,10 +26,10 @@
 package net.pwall.pipeline.codec
 
 import kotlin.test.Test
-import kotlin.test.assertFailsWith
-import kotlin.test.assertTrue
-import kotlin.test.expect
 import kotlinx.coroutines.runBlocking
+
+import io.kstuff.test.shouldBe
+import io.kstuff.test.shouldThrow
 
 import net.pwall.pipeline.TestIntCoAcceptor
 import net.pwall.pipeline.accept
@@ -39,52 +39,53 @@ class CodePointUTF8Test {
     @Test fun `should pass through ASCII`() = runBlocking {
         val pipe = CoCodePoint_UTF8(TestIntCoAcceptor())
         pipe.accept('A'.code)
-        assertTrue(pipe.complete)
+        pipe.complete shouldBe true
         val result = pipe.result
-        expect(1) { result.size }
-        expect('A'.code) { result[0] }
+        result.size shouldBe 1
+        result[0] shouldBe 'A'.code
     }
 
     @Test fun `should pass through multiple ASCII`() = runBlocking {
         val pipe = CoCodePoint_UTF8(TestIntCoAcceptor())
         pipe.accept("ABC")
-        assertTrue(pipe.complete)
+        pipe.complete shouldBe true
         val result = pipe.result
-        expect(3) { result.size }
-        expect('A'.code) { result[0] }
-        expect('B'.code) { result[1] }
-        expect('C'.code) { result[2] }
+        result.size shouldBe 3
+        result[0] shouldBe 'A'.code
+        result[1] shouldBe 'B'.code
+        result[2] shouldBe 'C'.code
     }
 
     @Test fun `should pass through two byte chars`() = runBlocking {
         val pipe = CoCodePoint_UTF8(TestIntCoAcceptor())
         pipe.accept(0xA9)
         pipe.accept(0xF7)
-        assertTrue(pipe.complete)
+        pipe.complete shouldBe true
         val result = pipe.result
-        expect(4) { result.size }
-        expect(0xC2) { result[0] }
-        expect(0xA9) { result[1] }
-        expect(0xC3) { result[2] }
-        expect(0xB7) { result[3] }
+        result.size shouldBe 4
+        result[0] shouldBe 0xC2
+        result[1] shouldBe 0xA9
+        result[2] shouldBe 0xC3
+        result[3] shouldBe 0xB7
     }
 
     @Test fun `should pass through three byte chars`() = runBlocking {
         val pipe = CoCodePoint_UTF8(TestIntCoAcceptor())
         pipe.accept(0x2014)
-        assertTrue(pipe.complete)
+        pipe.complete shouldBe true
         val result = pipe.result
-        expect(3) { result.size }
-        expect(0xE2) { result[0] }
-        expect(0x80) { result[1] }
-        expect(0x94) { result[2] }
+        result.size shouldBe 3
+        result[0] shouldBe 0xE2
+        result[1] shouldBe 0x80
+        result[2] shouldBe 0x94
     }
 
     @Test fun `should throw exception on invalid code point`() = runBlocking {
         val pipe = CoCodePoint_UTF8(TestIntCoAcceptor())
-        assertFailsWith<EncoderException> { pipe.accept(0x110000) }.let {
-            expect("Illegal value 0x110000") { it.message }
-            expect(0x110000) { it.errorValue }
+        shouldThrow<EncoderException>("Illegal value 0x110000") {
+            pipe.accept(0x110000)
+        }.let {
+            it.errorValue shouldBe 0x110000
         }
     }
 
@@ -93,11 +94,11 @@ class CodePointUTF8Test {
         pipe.accept('A'.code)
         pipe.accept(0x110000)
         pipe.accept('B'.code)
-        assertTrue(pipe.complete)
+        pipe.complete shouldBe true
         val result = pipe.result
-        expect(2) { result.size }
-        expect('A'.code) { result[0] }
-        expect('B'.code) { result[1] }
+        result.size shouldBe 2
+        result[0] shouldBe 'A'.code
+        result[1] shouldBe 'B'.code
     }
 
     @Test fun `should substitute for invalid code point when selected`() = runBlocking {
@@ -105,12 +106,12 @@ class CodePointUTF8Test {
         pipe.accept('A'.code)
         pipe.accept(0x110000)
         pipe.accept('B'.code)
-        assertTrue(pipe.complete)
+        pipe.complete shouldBe true
         val result = pipe.result
-        expect(3) { result.size }
-        expect('A'.code) { result[0] }
-        expect(0xBF) { result[1] }
-        expect('B'.code) { result[2] }
+        result.size shouldBe 3
+        result[0] shouldBe 'A'.code
+        result[1] shouldBe 0xBF
+        result[2] shouldBe 'B'.code
     }
 
 }

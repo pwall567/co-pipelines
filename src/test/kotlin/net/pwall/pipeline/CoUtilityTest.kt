@@ -27,7 +27,8 @@ package net.pwall.pipeline
 
 import kotlinx.coroutines.runBlocking
 import kotlin.test.Test
-import kotlin.test.expect
+
+import io.kstuff.test.shouldBe
 
 class CoUtilityTest {
 
@@ -37,7 +38,7 @@ class CoUtilityTest {
         counter.accept("b")
         counter.accept("c")
         counter.accept("d")
-        expect(4) { counter.result }
+        counter.result shouldBe 4
     }
 
 }

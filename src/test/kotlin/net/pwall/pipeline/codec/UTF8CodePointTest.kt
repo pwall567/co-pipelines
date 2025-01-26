@@ -26,10 +26,9 @@
 package net.pwall.pipeline.codec
 
 import kotlin.test.Test
-import kotlin.test.assertFalse
-import kotlin.test.assertTrue
-import kotlin.test.expect
 import kotlinx.coroutines.runBlocking
+
+import io.kstuff.test.shouldBe
 
 import net.pwall.pipeline.TestIntCoAcceptor
 
@@ -38,35 +37,35 @@ class UTF8CodePointTest {
     @Test fun `should pass through single char`() = runBlocking {
         val pipe = CoUTF8_CodePoint(TestIntCoAcceptor())
         pipe.accept('A'.code)
-        assertTrue(pipe.complete)
+        pipe.complete shouldBe true
         val result = pipe.result
-        expect(1) { result.size }
-        expect('A'.code) { result[0] }
+        result.size shouldBe 1
+        result[0] shouldBe 'A'.code
     }
 
     @Test fun `should pass through single char plus terminator`() = runBlocking {
         val pipe = CoUTF8_CodePoint(TestIntCoAcceptor())
         pipe.accept('A'.code)
         pipe.accept(-1)
-        assertTrue(pipe.complete)
-        assertTrue(pipe.closed)
+        pipe.complete shouldBe true
+        pipe.closed shouldBe true
         val result = pipe.result
-        expect(1) { result.size }
-        expect('A'.code) { result[0] }
+        result.size shouldBe 1
+        result[0] shouldBe 'A'.code
     }
 
     @Test fun `should pass through two byte chars`() = runBlocking {
         val pipe = CoUTF8_CodePoint(TestIntCoAcceptor())
         pipe.accept(0xC2)
-        assertFalse(pipe.complete)
+        pipe.complete shouldBe false
         pipe.accept(0xA9)
         pipe.accept(0xC3)
         pipe.accept(0xB7)
-        assertTrue(pipe.complete)
+        pipe.complete shouldBe true
         val result = pipe.result
-        expect(2) { result.size }
-        expect(0xA9) { result[0] }
-        expect(0xF7) { result[1] }
+        result.size shouldBe 2
+        result[0] shouldBe 0xA9
+        result[1] shouldBe 0xF7
     }
 
     @Test fun `should pass through three byte chars`() = runBlocking {
@@ -74,10 +73,10 @@ class UTF8CodePointTest {
         pipe.accept(0xE2)
         pipe.accept(0x80)
         pipe.accept(0x94)
-        assertTrue(pipe.complete)
+        pipe.complete shouldBe true
         val result = pipe.result
-        expect(1) { result.size }
-        expect(0x2014) { result[0] }
+        result.size shouldBe 1
+        result[0] shouldBe 0x2014
     }
 
 }

@@ -26,9 +26,10 @@
 package net.pwall.pipeline.base64
 
 import kotlin.test.Test
-import kotlin.test.assertFailsWith
-import kotlin.test.expect
 import kotlinx.coroutines.runBlocking
+
+import io.kstuff.test.shouldBe
+import io.kstuff.test.shouldThrow
 
 import net.pwall.pipeline.ByteArrayCoAcceptor
 import net.pwall.pipeline.StringCoAcceptor
@@ -40,34 +41,35 @@ class Base64CoDecoderTest {
     @Test fun `should decode simple string`() = runBlocking {
         val pipeline = Base64CoDecoder(StringCoAcceptor())
         pipeline.accept("QUJDRA==")
-        expect("ABCD") { pipeline.result }
+        pipeline.result shouldBe "ABCD"
     }
 
     @Test fun `should decode special characters`() = runBlocking {
         val pipeline = Base64CoDecoder(ByteArrayCoAcceptor())
         pipeline.accept("+/+/")
         val result = pipeline.result
-        expect(3) { result.size }
-        expect(0xFB.toByte()) { result[0] }
-        expect(0xFF.toByte()) { result[1] }
-        expect(0xBF.toByte()) { result[2] }
+        result.size shouldBe 3
+        result[0] shouldBe 0xFB.toByte()
+        result[1] shouldBe 0xFF.toByte()
+        result[2] shouldBe 0xBF.toByte()
     }
 
     @Test fun `should decode URL special characters`() = runBlocking {
         val pipeline = Base64CoDecoder(ByteArrayCoAcceptor())
         pipeline.accept("-_-_")
         val result = pipeline.result
-        expect(3) { result.size }
-        expect(0xFB.toByte()) { result[0] }
-        expect(0xFF.toByte()) { result[1] }
-        expect(0xBF.toByte()) { result[2] }
+        result.size shouldBe 3
+        result[0] shouldBe 0xFB.toByte()
+        result[1] shouldBe 0xFF.toByte()
+        result[2] shouldBe 0xBF.toByte()
     }
 
     @Test fun `should throw exception on invalid character`() = runBlocking {
         val pipeline = Base64CoDecoder(ByteArrayCoAcceptor())
-        assertFailsWith<EncoderException> { pipeline.accept('*'.code) }.let {
-            expect("Illegal value 0x2A") { it.message }
-            expect(0x2A) { it.errorValue }
+        shouldThrow<EncoderException>("Illegal value 0x2A") {
+            pipeline.accept('*'.code)
+        }.let {
+            it.errorValue shouldBe 0x2A
         }
     }
 

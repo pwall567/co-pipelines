@@ -26,8 +26,9 @@
 package net.pwall.pipeline.uri
 
 import kotlin.test.Test
-import kotlin.test.expect
 import kotlinx.coroutines.runBlocking
+
+import io.kstuff.test.shouldBe
 
 import net.pwall.pipeline.StringCoAcceptor
 import net.pwall.pipeline.accept
@@ -37,33 +38,33 @@ class URICoDecoderTest {
     @Test fun `should decode plain string unmodified`() = runBlocking {
         URICoDecoder(StringCoAcceptor()).let {
             it.accept("plain")
-            expect("plain") { it.result }
+            it.result shouldBe "plain"
         }
         URICoDecoder(StringCoAcceptor()).let {
             it.accept("aMuchLongerString")
-            expect("aMuchLongerString") { it.result }
+            it.result shouldBe "aMuchLongerString"
         }
     }
 
     @Test fun `should decode percent sequence`() = runBlocking {
         URICoDecoder(StringCoAcceptor()).let {
             it.accept("Hello%2C%20World%21")
-            expect("Hello, World!") { it.result }
+            it.result shouldBe "Hello, World!"
         }
         URICoDecoder(StringCoAcceptor()).let {
             it.accept("a%20more-complicated%20string%3A%20a%2Fb%2Bc%25e.%28%3F%3F%3F%29")
-            expect("a more-complicated string: a/b+c%e.(???)") { it.result }
+            it.result shouldBe "a more-complicated string: a/b+c%e.(???)"
         }
     }
 
     @Test fun `should decode plus as space`() = runBlocking {
         URICoDecoder(StringCoAcceptor()).let {
             it.accept("Hello%2C+World%21")
-            expect("Hello, World!") { it.result }
+            it.result shouldBe "Hello, World!"
         }
         URICoDecoder(StringCoAcceptor()).let {
             it.accept("a+more-complicated+string%3A+a%2Fb%2Bc%25e.%28%3F%3F%3F%29")
-            expect("a more-complicated string: a/b+c%e.(???)") { it.result }
+            it.result shouldBe "a more-complicated string: a/b+c%e.(???)"
         }
     }
 

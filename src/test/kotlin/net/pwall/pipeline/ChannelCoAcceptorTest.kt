@@ -26,12 +26,11 @@
 package net.pwall.pipeline
 
 import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertFalse
-import kotlin.test.assertTrue
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+
+import io.kstuff.test.shouldBe
 
 class ChannelCoAcceptorTest {
 
@@ -39,13 +38,13 @@ class ChannelCoAcceptorTest {
         val channel = Channel<String>()
         val job = launch {
             val iterator = channel.iterator()
-            assertTrue(iterator.hasNext())
-            assertEquals("abc", iterator.next())
-            assertTrue(iterator.hasNext())
-            assertEquals("def", iterator.next())
-            assertTrue(iterator.hasNext())
-            assertEquals("ghi", iterator.next())
-            assertFalse(iterator.hasNext())
+            iterator.hasNext() shouldBe true
+            iterator.next() shouldBe "abc"
+            iterator.hasNext() shouldBe true
+            iterator.next() shouldBe "def"
+            iterator.hasNext() shouldBe true
+            iterator.next() shouldBe "ghi"
+            iterator.hasNext() shouldBe false
         }
         val channelCoAcceptor = ChannelCoAcceptor(channel)
         channelCoAcceptor.accept("abc")

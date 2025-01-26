@@ -26,11 +26,12 @@
 package net.pwall.pipeline.codec
 
 import kotlin.test.Test
-import kotlin.test.expect
 import kotlin.test.fail
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
+
+import io.kstuff.test.shouldBe
 
 import net.pwall.pipeline.StringCoAcceptor
 
@@ -45,10 +46,11 @@ class TestReadingInputStream {
                 }
             } ?: fail("Couldn't locate /test1.txt")
         }
-        expect(expected) { pipe.result }
+        pipe.result shouldBe expected
     }
 
     companion object {
+        @Suppress("ConstPropertyName")
         const val expected = "The quick brown fox jumps over the lazy dog.\n\n" +
                 "And now for something completely different: \u2014 \u201C \u00C0 \u00C9 \u0130 \u00D4 \u00DC \u201D\n"
     }

@@ -26,10 +26,9 @@
 package net.pwall.pipeline.codec
 
 import kotlin.test.Test
-import kotlin.test.assertFalse
-import kotlin.test.assertTrue
-import kotlin.test.expect
 import kotlinx.coroutines.runBlocking
+
+import io.kstuff.test.shouldBe
 
 import net.pwall.pipeline.TestIntCoAcceptor
 
@@ -38,21 +37,21 @@ class UTF16CodePointTest {
     @Test fun `should pass through BMP code point`() = runBlocking {
         val pipe = CoUTF16_CodePoint(TestIntCoAcceptor())
         pipe.accept('A'.code)
-        assertTrue(pipe.complete)
+        pipe.complete shouldBe true
         val result = pipe.result
-        expect(1) { result.size }
-        expect('A'.code) { result[0] }
+        result.size shouldBe 1
+        result[0] shouldBe 'A'.code
     }
 
     @Test fun `should convert surrogate pair`() = runBlocking {
         val pipe = CoUTF16_CodePoint(TestIntCoAcceptor())
         pipe.accept(0xD83D)
-        assertFalse(pipe.complete)
+        pipe.complete shouldBe false
         pipe.accept(0xDE02)
-        assertTrue(pipe.complete)
+        pipe.complete shouldBe true
         val result = pipe.result
-        expect(1) { result.size }
-        expect(0x1F602) { result[0] }
+        result.size shouldBe 1
+        result[0] shouldBe 0x1F602
     }
 
 }

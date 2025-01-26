@@ -26,9 +26,10 @@
 package net.pwall.pipeline.codec
 
 import kotlin.test.Test
-import kotlin.test.assertTrue
-import kotlin.test.expect
 import kotlinx.coroutines.runBlocking
+
+import io.kstuff.test.shouldBe
+
 import net.pwall.pipeline.TestIntCoAcceptor
 
 class UTF16Windows1252Test {
@@ -36,21 +37,21 @@ class UTF16Windows1252Test {
     @Test fun `should pass through single char`() = runBlocking {
         val pipe = CoUTF16_Windows1252(TestIntCoAcceptor())
         pipe.accept('A'.code)
-        assertTrue(pipe.complete)
+        pipe.complete shouldBe true
         val result = pipe.result
-        expect(1) { result.size }
-        expect('A'.code) { result[0] }
+        result.size shouldBe 1
+        result[0] shouldBe 'A'.code
     }
 
     @Test fun `should pass through single char plus terminator`() = runBlocking {
         val pipe = CoUTF16_Windows1252(TestIntCoAcceptor())
         pipe.accept('A'.code)
         pipe.accept(-1)
-        assertTrue(pipe.complete)
-        assertTrue(pipe.closed)
+        pipe.complete shouldBe true
+        pipe.closed shouldBe true
         val result = pipe.result
-        expect(1) { result.size }
-        expect('A'.code) { result[0] }
+        result.size shouldBe 1
+        result[0] shouldBe 'A'.code
     }
 
     @Test fun `should pass through special chars`() = runBlocking {
@@ -69,21 +70,21 @@ class UTF16Windows1252Test {
         pipe.accept(0x0152)
         pipe.accept(0x017D)
         pipe.accept(0x2018)
-        assertTrue(pipe.complete)
+        pipe.complete shouldBe true
         val result = pipe.result
-        expect(14) { result.size }
-        expect(0x80) { result[0] }
-        expect(0x82) { result[1] }
-        expect(0x83) { result[2] }
-        expect(0x84) { result[3] }
-        expect(0x85) { result[4] }
-        expect(0x86) { result[5] }
-        expect(0x88) { result[7] }
-        expect(0x89) { result[8] }
-        expect(0x8A) { result[9] }
-        expect(0x8C) { result[11] }
-        expect(0x8E) { result[12] }
-        expect(0x91) { result[13] }
+        result.size shouldBe 14
+        result[0] shouldBe 0x80
+        result[1] shouldBe 0x82
+        result[2] shouldBe 0x83
+        result[3] shouldBe 0x84
+        result[4] shouldBe 0x85
+        result[5] shouldBe 0x86
+        result[7] shouldBe 0x88
+        result[8] shouldBe 0x89
+        result[9] shouldBe 0x8A
+        result[11] shouldBe 0x8C
+        result[12] shouldBe 0x8E
+        result[13] shouldBe 0x91
     }
 
 }

@@ -26,10 +26,9 @@
 package net.pwall.pipeline
 
 import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertFalse
-import kotlin.test.assertTrue
 import kotlinx.coroutines.runBlocking
+
+import io.kstuff.test.shouldBe
 
 class SimpleCoAcceptorTest {
 
@@ -41,13 +40,13 @@ class SimpleCoAcceptorTest {
         pipeline.accept(12345)
         pipeline.accept(67890)
         pipeline.accept(888)
-        assertFalse(pipeline.closed)
+        pipeline.closed shouldBe false
         pipeline.accept(null)
-        assertTrue(pipeline.closed)
-        assertEquals(3, list.size)
-        assertEquals(12345, list[0])
-        assertEquals(67890, list[1])
-        assertEquals(888, list[2])
+        pipeline.closed shouldBe true
+        list.size shouldBe 3
+        list[0] shouldBe 12345
+        list[1] shouldBe 67890
+        list[2] shouldBe 888
     }
 
 }
